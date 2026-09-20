@@ -51,22 +51,24 @@ def spokes(angles, half_w, z0, z1, r0=50.0, r1=115.0):
     return wp.extrude(z1 - z0)
 
 
-def dash_angles(sectors, avoid=(), r=80.0, avoid_deg=4.0):
+def dash_angles(sectors, avoid=(), r=80.0):
+    """avoid: [(angle, half width deg)] kept free of dashes."""
     step = math.degrees(PITCH / r)
     out = []
     for a0, a1 in sectors:
         n = int((a1 - a0) / step)
         for i in range(n + 1):
             a = a0 + i * step
-            if all(abs((a - v + 180) % 360 - 180) > avoid_deg for v in avoid):
+            if all(abs((a - v + 180) % 360 - 180) > w for v, w in avoid):
                 out.append(a)
     return out
 
 
-def waistband(sectors, loops):
+def waistband(sectors, loops, springs=()):
+    """springs: the spring slots' angles; no stitch dash may be cut beside a slot (slivers)."""
     c = _c()
     adds, cuts = [], []
-    ang = dash_angles(sectors, avoid=loops)
+    ang = dash_angles(sectors, avoid=[(a, 4.0) for a in loops] + [(a, 8.5) for a in springs])
     for z0, z1 in STITCH_Z:
         cuts.append(c.layer(spokes(ang, DASH / 2, z0, z1), O - STITCH_D, O + 0.5))
     adds.append(c.layer(spokes(loops, LOOP_W / 2, *LOOP_Z), O - 0.3, O + lines(3)))
@@ -102,7 +104,7 @@ def pentagon(yc):
 
 def back():
     c = _c()
-    adds, cuts = waistband(BACK_SECTORS, BACK_LOOPS)
+    adds, cuts = waistband(BACK_SECTORS, BACK_LOOPS, SPRINGS)
     # back pockets: a raised patch with a stitched seam inset from its edge
     for yc in (POCKET["y"], -POCKET["y"]):
         pts = pentagon(yc)
@@ -120,13 +122,17 @@ def back():
         for s in (-1, 1):
             e0, e1 = s * (hw - 1.6 - lines(2)), s * (hw - 1.6)
             lo, hi = min(e0, e1), max(e0, e1)
-            g = yz_prism([(yt + lo, zt + 1.0), (yt + hi, zt + 1.0), (ybt + hi, zbt + 5.0), (ybt + lo, zbt + 5.0)])
+            # the stitch stops 1.5 mm above the button (top at zbt + 7): ending at zbt + 5 it grazed the
+            # button's edge and tore the mesh (794 open edges)
+            g = yz_prism([(yt + lo, zt + 1.0), (yt + hi, zt + 1.0), (ybt + hi, zbt + 8.5), (ybt + lo, zbt + 8.5)])
             cuts.append(c.layer(g, O + lines(3) - STITCH_D, O + lines(3) + 0.5))
-        # teardrop button (a circle with a 45 deg point below): every side face prints at 45 deg or steeper
+        # teardrop button (a circle with a 45 deg point below): every side face prints at 45 deg or steeper.
+        # One closed outline (two lines and a 270 deg arc) in one extrude: a circle unioned with a triangle
+        # left seam edges that meshed with 814 open edges on one of the two buttons
         r, zc = BUTTON_D / 2, zbt + 2.0 + 1.0
-        btn = cq.Workplane("YZ", origin=(-125.0, 0, 0)).center(ybt, zc).circle(r).extrude(115.0)
-        tip = [(ybt - r / math.sqrt(2), zc - r / math.sqrt(2)), (ybt + r / math.sqrt(2), zc - r / math.sqrt(2)), (ybt, zc - r * math.sqrt(2))]
-        btn = btn.union(cq.Workplane("YZ", origin=(-125.0, 0, 0)).polyline(tip).close().extrude(115.0))
+        s2 = math.sqrt(2)
+        btn = (cq.Workplane("YZ", origin=(-125.0, 0, 0)).moveTo(ybt, zc - r * s2).lineTo(ybt + r / s2, zc - r / s2)
+               .threePointArc((ybt, zc + r), (ybt - r / s2, zc - r / s2)).close().extrude(115.0))
         adds.append(c.layer(btn, O - 0.3, O + lines(4)))
         zbt = zbt + 1.0                                     # the holes below follow the button's centre
         holes = cq.Workplane("YZ", origin=(-125.0, 0, 0)).pushPoints([(ybt - 1.4, zbt + 2.0), (ybt + 1.4, zbt + 2.0)]).circle(0.65).extrude(115.0)

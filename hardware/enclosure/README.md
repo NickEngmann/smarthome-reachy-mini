@@ -18,14 +18,14 @@ python bambu.py --slice          # out/bambu/*.3mf + overhang audit + Bambu Stud
 python probe.py                  # diagnostic: re-slice with supports on critical regions, report where they touch
 python render.py                 # out/render/*.png
 ```
-After a build, everything below `enclosure.py` reads only its exports, so run those together rather than one after another. `python enclosure.py --check` builds and checks in one go (slower).
+After a build, everything below `enclosure.py` reads only its exports, so the checks can run side by side. Run `bambu.py --slice` on its own, though: with the other checks competing for the CPU, a slice of the tray-cradle ran past 25 minutes. `python enclosure.py --check` builds and checks in one go (slower).
 
 ## Parts
 
 | Part | Prints | Function | Dungarees detail |
 |---|---|---|---|
-| **bezel** | face down | Window over the active area. A full-depth top wall holds the **microSD slot**. A snap lip with bumps hangs from a shelf on the plate on three sides. Bosses hold the board down, with sockets for the tray's locating pegs. | Dashed stitch round the bib, two bib buttons above the screen, and a heart below it. All are engraved, because a face-down print can't have raised detail. |
-| **tray-cradle** | upright | The tray has **2× USB-C windows** with 45°-roofed overmold recesses and a **switch slot** on one end. The floor has **BOOT/RESET flex tabs** (rooted below, 45° pointed tops) plus LED and mic holes. Four standoffs carry **locating pegs** through the board's M3 holes, and relief channels above the USB-C windows let the connectors slide down past the wall. Behind the tray, ribs bear on the belly and the front half of the waistband ends in a side-joint strip. | A strap, buckle and engraved button on each end of the bib, a stitched waistband, belt loops and a rolled cuff. |
+| **bezel** | face down | Window over the active area. A full-depth top wall holds the **microSD slot**. A snap lip hangs from a shelf on the plate on three sides, with 45° bumps on the two ends. Oval bosses hold the board down, with slot sockets for the tray's locating pegs. | Dashed stitch round the bib, two bib buttons above the screen, and a heart below it. All are engraved, because a face-down print can't have raised detail. |
+| **tray-cradle** | upright | The tray has **2× USB-C openings** sized for a plug's overmold and a **switch slot** on one end. The floor has **BOOT/RESET pin holes** plus LED and mic holes. Four standoffs carry **locating pegs** through the board's M3 holes, and relief channels above the USB-C windows let the connectors slide down past the wall. Behind the tray, ribs bear on the belly and the front half of the waistband ends in a side-joint strip. | A strap, buckle and engraved button on each end of the bib, a stitched waistband, belt loops and a rolled cuff. |
 | **backstrap** | upright | The rest of the collar. At each side, a tongue carries two flex tabs whose hooks click into windows in the strip. Three **spring tabs** preload the collar, and a **cable gutter** runs along the bottom. | Crossed back straps with edge stitching and teardrop buttons, two back pockets, a waistband with belt loops, and side buttons. The gutter doubles as the cuff. |
 
 ## Printing (Bambu Lab X1C)
@@ -43,12 +43,12 @@ Common process settings:
 - **Supports:** none anywhere.
 - **Elephant foot:** 0.15 mm compensation, so the engraving and the joint's sliding faces stay clean.
 
-Latest CLI slice, before the final fixes below:
+Latest CLI slice (v0.5):
 
 | Project | Time | PETG | Supports | Slicer warning |
 |---|---|---|---|---|
-| tray-cradle | 4 h 50 | 152 g | none | none |
-| bezel + backstrap | 3 h 42 | 115 g | none | "floating cantilever" on the backstrap (being located with `probe.py`) |
+| tray-cradle | 4 h 52 | 152 g | none | none |
+| bezel + backstrap | 3 h 42 | 114 g | none | none |
 
 **Colour:** a denim-blue PETG. With an AMS, add a height-range filament change on the upright parts for a brown cuff (z 0–4) and waistband (z 32–48 on the plate).
 
@@ -56,7 +56,7 @@ Latest CLI slice, before the final fixes below:
 Every geometry change is checked four ways: the fit check, `check_mesh.py`, `islands.py` (floating islands, then overhang regions), and a Bambu Studio CLI slice. `probe.py` turns support on for critical regions only and reports where the slicer puts it, which is how its warnings were traced to a part and a height. Fixes made for printing:
 
 - **Bezel lip shelf.** The lip used to hang from the parting plane with a 2.4 mm gap to the plate, held only by the top wall and bosses. Face down, it would have printed as one long bridge in mid-air. It now hangs from a shelf on the plate.
-- **BOOT/RESET flex tabs.** They are rooted below and grow upward. Rooted at the side, their lower edge was a 10 mm cantilever over the slit; that was the tray-cradle's slicer warning.
+- **BOOT/RESET flex tabs** (since replaced by pin holes, see v0.5). Rooted at the side, their lower edge was a 10 mm cantilever over the slit; that was the tray-cradle's slicer warning.
 - **Spring tabs.** The slot and the tab close at the top in a 45° point instead of a flat top slit. The flat slit's roof was a 15 mm curved bridge, 2.5 mm thick with air on both faces, and Bambu Studio flagged it as a "floating cantilever" on the backstrap. `bisect_backstrap.py` found it in two rounds:
   - Round 1: of six variants with one feature group removed, only the one without springs sliced clean.
   - Round 2: flat springs without their nubs still warned, while gable-topped springs with nubs sliced clean.
@@ -73,6 +73,17 @@ Every geometry change is checked four ways: the fit check, `check_mesh.py`, `isl
   - **Flexures:** slits 0.84 → 1.0 with 45° pointed tops on every flexure; BOOT/RESET tabs thinned to 0.84 mm (about 12 N → 4 N).
   - **Spring nubs:** chamfered on all four sides.
   - **New checks:** `collar.py --check-only` now also checks the assembly paths, not only final positions: the board lifted out of the tray, the tray-cradle backed off the belly, and the backstrap pulled back off the robot and the tray-cradle.
+- **Independent fit review (v0.5).** A second reviewer went over v0.4 for anything that would force a reprint. Changes:
+  - **Snap bumps:** the bottom bumps are gone. The tray's bottom wall is fused to the cradle filler and can't flex, so a bump there would have strained the lip about 15 %; the bottom lip now only locates. There are five bumps on the two end walls instead (z ±40 and 0 on the right, clear of the USB-C openings and the switch). Both faces are 45°, so the bezel pulls off without prying. The pockets let the bezel lift 0.3 mm (was 0.6).
+  - **BOOT/RESET:** Ø3 pin holes with a countersink, pressed with a paperclip. The flex tabs bent across the layer lines at 4–6 % strain, and a pointed slot top left a 0.7 mm web between the two tabs.
+  - **USB-C:** the overmold opening (14 × 8.2) runs through the whole wall, so a plug seats fully. The blind recess stopped the overmold 0.8 mm short and left a 0.1 mm web.
+  - **Pegs and sockets:** pegs go 1.4 mm past the board (was 2.4). The bezel sockets are 3.4 × 4.2 slots in 5.0 × 5.8 oval bosses. Face down, the bezel shrinks in its own plane while the upright tray's hole pitch doesn't, so round sockets could have ridden up onto the peg points. The boss-to-board gap is back to 0.2: the board thickness was already in the stack-up.
+  - **Spring preload:** the nubs reach 1.2 mm plus the play the collar loses as it seats (1.9 mm at the back, 1.55 mm at 120°/240°). Tabs are 1.26 thick and 25 mm long, so the remaining 1.2 mm is about 0.6 % strain.
+  - **microSD:** the slot is 12 × 1.6 with a 45° lead-in, so a card can't drop into the case (was 13.4 × 3.2).
+  - **Mics:** Ø2.0 teardrop holes (Ø1.2 prints closed).
+  - **Lead-ins:** a 0.4 mm chamfer on the bezel lip's free edge, and 0.8 mm chamfers where the tongue meets the strip. The joint pull lips are 0.84 mm proud (was 1.68): only 0.6 mm of lift releases a hook.
+  - **Mesh:** the right back strap's edge stitches ended 0.1 mm inside its button and tore the mesh (794 open edges). They now stop 1.5 mm above it. Waistband stitch dashes keep clear of the spring slots.
+  - **Checks:** the path sweeps now run the backstrap 100 mm back and the tray-cradle 60 mm off the belly in finer steps, and add the bezel lifted off the tray and board.
 - **Plate placement.** The print STLs are set on the plate by their tessellated vertices. OCC's bounding box of the lofted collar was loose, and the STLs floated.
 
 ## Load: why it stays put
@@ -82,7 +93,7 @@ Every geometry change is checked four ways: the fit check, `check_mesh.py`, `isl
   - Each tab is 10 × 2.1 × 22 mm and deflects 0.6 mm to engage: 0.39 % strain and about 2.6 N per tab.
   - Every joint surface is extruded along x, so the backstrap slides straight on.
   - To release, lift each tab by its pull lip.
-- **Spring preload.** Three U-slot spring tabs press their nubs 1.2 mm into the shell, about 3 N each. The nubs have 45° sides all round, so they ride up onto the shell as the backstrap slides on instead of catching on an edge. The ribs seat on the belly, and the collar's 1.5 mm clearance never becomes rattle.
+- **Spring preload.** Three U-slot spring tabs press their nubs into the shell. They reach 1.2 mm plus the play the collar loses as it seats, so about 1.2 mm of preload remains once seated. The nubs have 45° sides all round, so they ride up onto the shell as the backstrap slides on instead of catching on an edge. The ribs seat on the belly, and the collar's 1.5 mm clearance never becomes rattle.
 - **Remaining limit:** at full body yaw, the display's front corners sweep a radius of about 135 mm, and the extra mass makes body turns slower.
 
 ## Tolerances: Bambu X1C, 0.4 mm nozzle, 0.20 mm layers, PETG
@@ -90,27 +101,28 @@ Every fit is one of these classes (`geom.py`). Walls are whole line widths (`lin
 
 | Class | Value | Used for |
 |---|---|---|
-| `FIT_SNAP` | 0.40 / side | Bezel lip to tray wall (reMixTape printed 0.2 on this printer; +0.2 wiggle room). Bumps are 0.80, so they engage 0.40 past the wall face, as on reMixTape. Pockets are +0.3 deep and +1.6 wide. |
+| `FIT_SNAP` | 0.40 / side | Bezel lip to tray wall (reMixTape printed 0.2 on this printer; +0.2 wiggle room). Bumps are 0.80 with 45° faces both ways, so they engage 0.40 past the wall face, as on reMixTape. Pockets are +0.3 deep and +1.6 wide. |
 | `FIT_SLIDE` | 0.40 / side | Backstrap tongue over the front strip |
 | `FIT_Z` | 0.40 (2 layers) | Any gap across layers: glass to bezel plate, lip to PCB, tray top to bezel top wall |
 | `FIT_CATCH` | 0.30 | Play at a snap's catch face (the springs take it up); +0.8 on the free side of each window |
 | `HOLE_H_EXTRA` | +0.30 | Holes lying flat in an upright print get a teardrop roof; pins lying flat are teardrops, point down. |
-| Locating pegs | Ø2.4 teardrop pins on the tray standoffs (point clipped to R1.45, 2.4 mm past the board, 45° tip); Ø3.4 sockets with a lead-in in the bezel bosses | 0.4 / side in the board's Ø3.2 holes. The board sits on its pegs before the bezel goes on, so nothing has to find a hidden hole. |
-| Boss to board | 0.4 (2 layers) | The bezel never binds on a thick board or a fat print (was 0.2) |
-| Board to wall | 0.75 / 1.1 / 2.0 | Sides / USB-C end (plus 0.6 mm relief channels above the USB-C windows, so the connectors, which stand 1.0 mm past the board edge, slide past the wall) / top edge (the flex cables wrap it; was 1.5) |
-| Flexure slits | 1.0, 45° pointed tops | Joint tabs, spring tabs and BOOT/RESET tabs: no bridged slit roof sits above a flexure where it could sag and fuse (was 0.84) |
+| Locating pegs | Ø2.4 teardrop pins on the tray standoffs (point clipped to R1.45, 1.4 mm past the board, 45° tip); 3.4 × 4.2 slot sockets (long in z) in 5.0 × 5.8 oval bezel bosses | 0.4 / side in the board's Ø3.2 holes. The board sits on its pegs before the bezel goes on, so nothing has to find a hidden hole. The slots absorb the face-down bezel's in-plane shrink. |
+| Boss to board | 0.2 (1 layer) | Holds the board down without rattle |
+| Board to wall | 0.75 / 1.1 / 2.0 | Sides / USB-C end (plus 0.6 × 9.4 mm relief channels above the USB-C openings, so the connectors, which stand 1.0 mm past the board edge, slide past the wall) / top edge (the flex cables wrap it; was 1.5) |
+| Flexure slits | 1.0, 45° pointed tops | Joint tabs and spring tabs: no bridged slit roof sits above a flexure where it could sag and fuse (was 0.84) |
 | Shell | 1.5 collar, 0.4 ribs | The shell is Pollen's CAD mesh, not measured on the robot, and a tight collar would mean a reprint (was 1.0). The ribs set the position and the springs remove the play. |
-| Openings | USB-C 10.2 × 5.6 (overmold recess 13.4 × 7.8), switch 11 × 5.6, microSD 13.4 × 3.2 | |
+| Openings | USB-C 14 × 8.2 through the wall (R2.2), switch 11 × 5.6, microSD 12 × 1.6 with a 0.8 lead-in, BOOT/RESET Ø3.0 (countersunk Ø4.6), mics Ø2.0 teardrop | |
+| Lead-ins | 0.4 × 45° on the bezel lip's free edge; 0.8 × 45° on the strip's rear outer edge and the tongue's front inner edge | |
 | Walls | tray 2.1 (5 lines), collar 2.52 (6), tongue 2.1 (5), strip 1.26 (3), ribs 4.2 (10) | |
 | Detail, upright | proud 0.84 / 1.26 / 1.68; grooves 0.84 × 0.5 deep; stitch dashes 0.8 tall (4 layers); every underside at 45° or steeper | |
 | Detail, bezel face | engraved 1.0 wide × 0.6 deep | |
 
 ## Assembly
 1. Lower the board, glass up, onto the tray's four locating pegs. Start at the USB-C end, so the connectors slide down the relief channels into their windows. The board then sits on its standoffs without moving.
-2. Press the bezel on until the bumps click; its boss sockets drop over the peg tips. To open it, pry at the notch at the bottom centre.
+2. Press the bezel on at the bench, before the tray-cradle goes on the robot, until the bumps click. Its boss sockets drop over the peg tips. To open it, pull it straight off: the bumps are 45° both ways. The notch at the bottom centre gives a fingernail a start.
 3. Put the tray-cradle against Reachy's belly. The front half of the waistband slides on from the front.
 4. Slide the backstrap on from behind. The spring nubs drag on the shell, and the four joint tabs click into their windows.
-5. To take it off, lift the four tabs by their pull lips and slide the backstrap back.
+5. To take it off, lift the four tabs by their pull lips (1 mm is enough) and slide the backstrap back.
 
 Cable:
 - **Outside power:** plug either USB-C port directly.
@@ -121,31 +133,40 @@ Cable:
 - **Robot frame R**: +X front, +Y robot's left, Z up, 0 at the table.
 - The transform is R = T(X0,0,Z0)·Ry(−6°)·Rz(−90°)·B. `placement()` puts the tray's lowest back edge at z 30, with the tray back 2.5 mm from the shell at the closest point. Board centre: robot X 97.4, Z 86.3.
 
-## Status (2026-09-12, v0.3 print-ready candidate — not yet printed)
-Final run (`enclosure.py`, then `collar.py --check-only`, `check_mesh.py`, `islands.py`, `bambu.py --slice` and `render.py` side by side): **everything passes, and both plates slice with no warnings and no supports.**
+## Status (2026-09-13, v0.5 print-ready candidate — not yet printed)
+Final run after the independent fit review (`enclosure.py`, then `collar.py --check-only`, `check_mesh.py`, `islands.py`, `bambu.py` and `render.py`, then `bambu.py --slice` on its own): **everything passes, and both plates slice with no warnings and no supports.**
 
 | Part | Volume | Robot-frame extent (mm) | Checks |
 |---|---|---|---|
-| bezel | 26.0 cm³ | x 74.8…107.4, y −91.3…91.6, z 31.8…142.0 | clear of all 55 board solids; watertight; no floating islands |
-| tray-cradle | 135.4 cm³ | x −16.0…103.1, y −92.6…92.9, z 30.0…139.1 | clear of board; watertight; no floating islands |
-| backstrap | 75.2 cm³ | x −86.0…11.2, y ±84.3, z 30.0…125.0 | watertight; no floating islands |
+| bezel | 26.0 cm³ | x 74.7…107.4, y −91.3…91.6, z 31.8…142.5 | clear of all 55 board solids; watertight; no floating islands |
+| tray-cradle | 134.9 cm³ | x −16.0…103.1, y −92.6…92.9, z 30.0…139.6 | clear of board; watertight; no floating islands |
+| backstrap | 73.5 cm³ | x −86.5…11.2, y ±84.2, z 30.0…125.0 | watertight; no floating islands, no cantilever or bridge regions |
 
-- **Fit check: passed.** Overlaps are 0.000 mm³ for bezel/tray, tray-cradle/backstrap (the hooks sit in their windows), bezel/backstrap, and each part against the shell. The spring nubs' 65 mm³ overlap with the shell is the intended 1.2 mm preload.
+- **Fit check: passed.** Overlaps are 0.000 mm³ for bezel/tray, tray-cradle/backstrap (the hooks sit in their windows), bezel/backstrap, and each part against the shell. The spring nubs' 82.6 mm³ overlap with the shell is the intended preload plus the seating play.
+- **Assembly paths: passed** at every step: the board lifted 0.5–16 mm out of the tray, the bezel (bumps removed) lifted 0.5–8 mm off the tray and board, the tray-cradle backed 1–60 mm off the belly, and the backstrap pulled 1–100 mm back past the shell and the tray-cradle.
 - **Mesh check: passed.** All six STLs (as modelled and as printed) have 0 open edges and 100 % consistent normals.
-- **Island scan: clean** on all three parts. The overhang scan's remaining "cantilever" regions are ledges of 1.0–1.8 mm (window corners, buckle bars, loop steps), which PETG prints unsupported.
+- **Island scan: clean** on all three parts. The overhang scan's remaining regions are short bridges (1–6 mm: the microSD slot roof, the pry notch, loop steps), which PETG prints unsupported.
 
 | Project | Time | PETG | Supports | Slicer warnings |
 |---|---|---|---|---|
-| `reachy-dungarees-tray-cradle.3mf` | 4 h 50 | 152 g | none | none |
-| `reachy-dungarees-bezel-backstrap.3mf` | 3 h 42 | 115 g | none | none |
+| `reachy-dungarees-tray-cradle.3mf` | 4 h 52 | 152 g | none | none |
+| `reachy-dungarees-bezel-backstrap.3mf` | 3 h 42 | 114 g | none | none |
 
-Total: about 8 h 32 and 267 g of PETG.
+Total: about 8 h 34 and 266 g of PETG.
+
+**2026-09-20, handover check.** `check_mesh.py` re-run against the exports exactly as they stand:
+all six STLs pass, 0 open edges, normals 100 % (backstrap 74.69 cm³, bezel 25.99, tray-cradle
+135.34). The printable results are now **committed** - `out/print/*.stl`, `out/bambu/*.3mf` and
+`out/render/*.png` - so the repo can be printed from without a 12-minute rebuild; `out/step`,
+`out/stl` and the slicer diagnostics stay out of git, as `.gitignore` says. Nothing was reprinted or
+re-sliced, and v0.5 still has never been printed.
 
 ## Open risks — check on the first print
 - **Collar and spring feel.** If the backstrap is too hard to slide on, reduce `PRELOAD`; if the collar is loose, raise it.
 - **Slide switch (MST22D18G2):** the actuator sits 1.35 mm inside the board edge, so it needs a fingernail or pen tip. A captive slider cap would be a v2.
 - **microSD** is push-push, about 4 mm inside the wall, so a pen tip may be needed.
-- **BOOT/RESET tabs** are 0.84 mm flexures with a 0.6 mm gap to the switch (about 4 N at the tip).
+- **BOOT/RESET** are pressed through Ø3 pin holes with a paperclip or SIM tool.
+- **Bezel retention.** Five 45° bumps hold the bezel by friction and flex, not by a hard catch. If it comes off too easily, raise `BUMP_D` by 0.1.
 - **Mics:** their port side isn't known, so there are holes front and back.
 - **The optional camera module** isn't accommodated.
 - **Antennas:** by Pollen's sleep-pose drawing, the antennas pass about 14 mm outside the collar top. Check this on the robot.

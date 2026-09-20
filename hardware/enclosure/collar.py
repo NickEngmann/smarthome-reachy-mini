@@ -10,9 +10,10 @@ Why it holds (see README "Load"):
     and two vertical flex tabs hook into windows in the strip (lift a tab by its lip to release).
     Every surface of the joint is extruded along x, so the backstrap slides on along x.
     Tab: 10 wide, 2.1 thick, 22 long, 0.6 deflection -> strain 0.39 %, ~2.6 N per tab (PETG).
-  * Three spring tabs in the backstrap press nubs onto the shell with 1.2 mm of preload: the
-    backstrap is pushed back, the joint hooks pull the front half back, the ribs are pulled onto
-    the belly. The collar's 1.0 mm clearance never turns into rattle. ~3 N per spring.
+  * Three spring tabs in the backstrap press nubs onto the shell: the backstrap is pushed back, the
+    joint hooks pull the front half back, the ribs are pulled onto the belly. The nubs reach 1.2 mm
+    plus the play the collar loses as it seats, so ~1.2 mm of preload remains and the collar's
+    1.5 mm clearance never turns into rattle.
 """
 import os, sys, math, functools
 import cadquery as cq
@@ -94,7 +95,25 @@ def strip():
         h0, h1 = hook_z(tab)
         # window; its bottom clears the hook's 45 deg underside, which enters the strip's plane at h0 - 0.6
         s = s.cut(box(HOOK_X[0] - FIT_CATCH, HOOK_X[1] + 0.8, 40, 120, h0 - 1.2, h1 + 0.6))
-    return s
+    return s.cut(side_corner_cut(STRIP_X[0], +1, B_STRIP, +1, LEADIN_JOINT))       # lead-in at the rear outer edge
+
+
+def side_corner_cut(x_end, dx, a, da, size, step=2.0):
+    """+Y side: a 45 deg chamfer along z on the edge where a side skin's end face (at x_end) meets its face at
+    shell offset a. dx = +1 when the material lies at x > x_end (-1 otherwise); da = +1 for an outer face
+    (material at smaller y), -1 for an inner face. Ruled through the same z samples as side_skin, so the
+    cut follows the skin's facets exactly; it overshoots the faces by 0.2 and the skin's ends by 0.5."""
+    z0, z1 = z_bed(), BAND_TOP
+    n = max(2, int(math.ceil((z1 - z0) / step)))
+    zs = [z0 + (z1 - z0) * i / n for i in range(n + 1)]
+    secs = [(z0 - 0.5, z0)] + [(z, z) for z in zs] + [(z1 + 0.5, z1)]
+    o = 0.2
+    wires = []
+    for z, zr in secs:
+        yf = side_r(zr) + a
+        pts = [(x_end - dx * o, yf + da * o), (x_end + dx * (size + o), yf + da * o), (x_end - dx * o, yf - da * (size + o))]
+        wires.append(cq.Workplane("XY", origin=(0, 0, z)).polyline(pts).close().val())
+    return cq.Workplane().add(cq.Solid.makeLoft(wires, True))
 
 
 def tongue(tabs=True, buttons=True):
@@ -134,7 +153,7 @@ def tongue(tabs=True, buttons=True):
         for dx in (-1.2, 1.2):
             btn = btn.cut(cq.Workplane().add(cq.Solid.makeCylinder(0.6, 2.0, cq.Vector(bx + dx, yo + 0.5, bz), cq.Vector(0, 1, 0))))
         t = t.union(btn)
-    return t
+    return t.cut(side_corner_cut(TONGUE_X[1], -1, A_TONGUE, -1, LEADIN_JOINT))   # lead-in at the front inner edge
 
 
 def wedge():
@@ -184,12 +203,13 @@ def spring_nubs():
     all round, so the backstrap's sideways slide rides them up onto the shell instead of catching (and
     scratching) on a square edge. The base starts 1.0 mm inside the tab."""
     z0, z1 = SPRING_Z
-    zc = z1 - 5.0
+    zc = z1 - 7.0                                          # the frustum base stays inside the tab's pointed top
     top_w, top_h = 2.0, 2.2
     nubs = None
     for th in SPRINGS:
         rs = shell.radius_at(prof(), zc, th)
-        ri, rt = rs + SHELL_CLR + 1.0, rs - PRELOAD
+        reach = PRELOAD + (RIB_CLR + FIT_CATCH) * abs(math.cos(math.radians(th)))   # play lost when the collar seats
+        ri, rt = rs + SHELL_CLR + SPRING_THIN / 2, rs - reach     # base mid-way through the thinned tab
         d = ri - rt
         base = cq.Workplane("YZ", origin=(ri, 0, 0)).rect(top_w + 2 * d, top_h + 2 * d).val()
         tip = cq.Workplane("YZ", origin=(rt, 0, 0)).rect(top_w, top_h).val()
@@ -328,35 +348,51 @@ def check(tray_b, bezel_b, cradle, backstrap_free, nubs):
     bad = abs(extra) > 0.05 or v_bs < 0
     print("  %-18s overlap %.3f mm3 beyond the spring nubs %s" % ("backstrap/shell", extra, "FAIL" if bad else "ok"))
     ok &= not bad
-    print("  spring nubs/shell  %.1f mm3 (intended: %.1f mm preload each, ~3 N per spring)" % (v_nub, PRELOAD))
+    print("  spring nubs/shell  %.1f mm3 (intended: %.1f mm preload each plus the seating play)" % (v_nub, PRELOAD))
     ok &= v_nub > 0
-    ok &= check_paths(solids, tray_b, cradle, backstrap_free, nubs, shell0)
+    ok &= check_paths(solids, tray_b, bezel_b, cradle, backstrap_free, nubs, shell0)
     print("CHECK " + ("PASSED" if ok else "FAILED"))
     return ok
 
 
-def check_paths(solids, tray_b, cradle, backstrap, nubs, shell0):
+def board_overlap(part, solids, dy=0.0):
+    pbb = part.BoundingBox()
+    v = 0.0
+    for s in solids:
+        m = s.translate(cq.Vector(0, dy, 0)) if dy else s
+        b = m.BoundingBox()
+        if b.xmax < pbb.xmin or b.xmin > pbb.xmax or b.ymax < pbb.ymin or b.ymin > pbb.ymax or b.zmax < pbb.zmin or b.zmin > pbb.zmax:
+            continue
+        v += max(overlap(part, m), 0.0)
+    return v
+
+
+def check_paths(solids, tray_b, bezel_b, cradle, backstrap, nubs, shell0):
     """Assembly paths, not just final positions. The board drops into the tray along -y (checked by lifting
-    it back out along +y); the tray-cradle slides onto the belly along -x (lifted back along +x); the
-    backstrap slides on along +x (pulled back along -x) past the robot and the tray-cradle. The backstrap's
-    spring nubs and joint hooks are left out: they are meant to deflect on the way."""
+    it back out along +y); the bezel then presses on along -y (lifted back, its snap bumps left out); the
+    tray-cradle slides onto the belly along -x (backed off along +x); the backstrap slides on along +x
+    (pulled back along -x) past the robot and the tray-cradle. The backstrap's spring nubs and joint hooks
+    are left out: they are meant to deflect on the way."""
+    import enclosure as EN
     ok = True
     print("assembly paths (overlap must stay 0 at every step):")
     tray = tray_b.val()
-    tbb = tray.BoundingBox()
-    for d in (0.5, 2.0, 5.0, 9.0, 14.0):
-        v = 0.0
-        for s in solids:
-            m = s.translate(cq.Vector(0, d, 0))
-            b = m.BoundingBox()
-            if b.xmax < tbb.xmin or b.xmin > tbb.xmax or b.ymax < tbb.ymin or b.ymin > tbb.ymax or b.zmax < tbb.zmin or b.zmin > tbb.zmax:
-                continue
-            v += max(overlap(tray, m), 0.0)
+    for d in (0.5, 1.0, 2.0, 3.0, 4.5, 6.0, 8.0, 10.0, 13.0, 16.0):
+        v = board_overlap(tray, solids, d)
         bad = v > 0.05
         print("  board lifted %4.1f mm out of the tray: %.3f mm3 %s" % (d, v, "FAIL" if bad else "ok"))
         ok &= not bad
+    bez = bezel_b.val()
+    for side, at in BUMPS:
+        bez = bez.cut(EN.bump(side, at).val())
+    for d in (0.5, 1.0, 2.0, 3.0, 5.0, 8.0):
+        m = bez.translate(cq.Vector(0, d, 0))
+        v1, v2 = overlap(m, tray), board_overlap(m, solids)
+        bad = v1 > 0.05 or v2 > 0.05 or v1 < 0
+        print("  bezel (no bumps) %4.1f mm up: vs tray %.3f mm3, vs board %.3f mm3 %s" % (d, v1, v2, "FAIL" if bad else "ok"))
+        ok &= not bad
     cr = cradle.val()
-    for d in (1.0, 4.0, 10.0, 25.0):
+    for d in (1.0, 3.0, 6.0, 10.0, 20.0, 40.0, 60.0):
         v = overlap(cr.translate(cq.Vector(d, 0, 0)), shell0)
         bad = v > 0.05 or v < 0
         print("  tray-cradle %4.1f mm off the belly vs shell: %.3f mm3 %s" % (d, v, "FAIL" if bad else "ok"))
@@ -368,7 +404,7 @@ def check_paths(solids, tray_b, cradle, backstrap, nubs, shell0):
         zone = z if zone is None else zone.union(z)
     zone = both_sides(zone)
     bs = backstrap.val().cut(nubs.val()).cut(zone.val())
-    for d in (1.0, 4.0, 10.0, 20.0, 30.0):
+    for d in (1.0, 3.0, 6.0, 10.0, 15.0, 20.0, 30.0, 45.0, 60.0, 80.0, 100.0):
         m = bs.translate(cq.Vector(-d, 0, 0))
         v1, v2 = overlap(m, shell0), overlap(m, cr)
         bad = v1 > 0.05 or v2 > 0.05 or v1 < 0 or v2 < 0

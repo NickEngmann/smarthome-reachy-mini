@@ -71,32 +71,47 @@ PART_Y = PCB_Y1 + FIT_Z + LIP_H                           # parting plane: the l
 CORNER_R = 2.0
 TOP_SEAM_CLR = FIT_Z  # tray walls stop this short of the bezel's top wall
 # snap bumps on the bezel's lip, pockets in the tray: 0.45 mm engagement past the wall face
-BUMP_W, BUMP_H = 8.0, layers(1.2)
+# Bumps are 45 deg on both faces: push-on and pull-off take about the same force, so the bezel can be
+# removed without breaking anything (a flat catch can only be pried, which shears bumps).
+BUMP_W, BUMP_H = 8.0, layers(1.8)
 BUMP_D = LIP_CLR + 0.40      # 0.40 past the wall face: reMixTape's printed PETG engagement (was 0.45)
-BUMP_Y0 = PART_Y - LIP_H + 0.4
+BUMP_Y0 = PART_Y - LIP_H + 0.6   # above the lip's 0.4 lead-in chamfer (a 45 deg face 0.05 off the bump's own)
 POCKET_DEPTH_EXTRA, POCKET_Y_EXTRA, POCKET_W_EXTRA = 0.30, 0.40, 1.6
-BUMPS = [("L", 35.0), ("L", -44.0), ("R", 35.0), ("R", -35.0), ("B", -60.0), ("B", 0.0), ("B", 60.0)]
+# Side walls only. The bottom wall is fused to the cradle's filler block and cannot flex, so a bump there
+# would strain the lip ~15 %; the bottom lip only locates. z +-40 and 0 keep clear of the USB-C openings,
+# the switch slot and the buckle frames on the end walls.
+BUMPS = [("L", 40.0), ("L", -40.0), ("R", 40.0), ("R", 0.0), ("R", -40.0)]
 # posts: the TRAY standoffs carry the locating pegs, so the board drops onto them and stays put while the
 # bezel goes on (reMixTape's proven order). With the pegs on the bezel the board could float +-1.1 mm in
 # its cavity while four hidden pegs had to find their holes, and a peg captures only ~0.7 mm.
-STANDOFF_D, BOSS_D = 6.8, 5.0     # boss limited by the glass edge 0.5 mm away
+STANDOFF_D = 6.8
 PEG_D = 2.4            # teardrop pin (point down: it prints horizontal); 0.4 a side in the board's Ø3.2 hole
 PEG_POINT_R = 1.45     # teardrop point clipped to this radius: 2.65 mm tall in the Ø3.2 hole
-PEG_THROUGH = 2.4      # pin length past the PCB top face, into the bezel socket
+PEG_THROUGH = 1.4      # pin length past the PCB top face, into the bezel socket (was 2.4)
 PEG_TIP = 0.6          # 45 deg cone at the tip
-SOCKET_D = 3.4         # vertical hole in the face-down bezel boss: peg 2.4 + 2 x 0.4 + 0.2 printed-hole allowance
+# Bezel sockets are slots, longer in z: the face-down bezel shrinks in its own plane (~0.2-0.3 % over the
+# 98 mm hole pitch) while the upright tray's pitch lies in its print Z, so the bottom sockets would ride up
+# onto the peg points. Bosses are ovals, longer in z too, because x is limited by the glass edge 0.5 mm away.
+SOCKET_D, SOCKET_H = 3.4, 4.2
 SOCKET_DEPTH = PEG_THROUGH + 1.0
-SOCKET_MOUTH = 0.4     # 45 deg lead-in chamfer (leaves a 0.4 mm ring on the Ø5 boss end)
-BOSS_GAP = layers(0.3) # 0.4: boss end to the PCB top; boards and prints vary ~0.1-0.2, so it never binds (was 0.2)
+BOSS_D, BOSS_H = 5.0, 5.8
+BOSS_GAP = LAYER       # 0.2: boss end to the PCB top. The PCB's 1.7 mm is already in the stack-up; 0.4 only added rattle
 # openings (all widened for the print; a plug's overmold gets a recess)
-USB_W, USB_H, USB_R, USB_RECESS = 10.2, 5.6, 1.6, (13.4, 7.8, 1.4)
-USB_RELIEF_D = 0.6    # channel in the wall's inner face above each window: the shells stand 1.0 past the PCB edge, 0.1 from the wall
+# USB-C: the plug-overmold opening runs through the whole wall (14 x 8.2 z x y), so an overmold reaches
+# within ~0.1 mm of the receptacle mouth. A 1.4 mm blind recess stopped it 0.8 mm short and left a 0.1 mm
+# web next to the relief channel.
+USB_OPEN_W, USB_OPEN_H, USB_OPEN_R = 14.0, 8.2, 2.2
+USB_RELIEF_D = 0.6    # channel in the wall's inner face above each opening: the shells stand 1.0 past the PCB edge, 0.1 from the wall
+USB_RELIEF_W = 9.4    # the 8.94 shell + 0.23 a side; stays inside the opening's straight edge (14 - 2 x 2.2 = 9.6)
 SWITCH_SLOT = (11.0, 5.6, 1.2)                            # z x y, radius: fingernail / pen slot
-SD_SLOT = (13.4, 3.2)                                     # x x y
+SD_SLOT = (12.0, 1.6)                                     # x x y: guides a 1 mm card into the socket (3.2 let it drop into the cavity)
+SD_LEADIN = 0.8                                           # 45 deg chamfer outside
 EDGE_CHAMFER = 0.6
-# BOOT/RESET flex tabs: 0.84 thick (floor 2.1 thinned by 1.26), ~4 N at the tip incl. the tact switch (was ~12 N at 1.26)
-BUTTON_TAB = dict(len=9.8, w=6.0, slit=1.0, nub_d=2.4, gap=0.6, thin=lines(3))
-MIC_HOLE_D, LED_HOLE_D = 1.2, 2.2
+# BOOT / RESET: pin holes (a paperclip or SIM tool), as on reMixTape. Flex tabs bent across the layer lines
+# of the upright print at 4-6 % strain and would crack.
+BUTTON_HOLE_D, BUTTON_HOLE_CSK = 3.0, 4.6
+MIC_HOLE_D, LED_HOLE_D = 2.0, 2.2                         # Ø1.2 printed closed to ~0.9
+LEADIN_LIP = 0.4                                          # 45 deg chamfer on the bezel lip's free edge
 
 # ------------------------------------------------------------------ placement (R)
 TILT = 6.0            # deg, top leans back: follows the shell, screen faces slightly up
@@ -122,11 +137,15 @@ JOINT_GAP = FIT_SLIDE
 TABS = [(40.0, 62.0), (88.0, 110.0)]                      # (root z, tip z) of each flex tab
 TAB_X, SLIT = (-10.0, 0.0), 1.0     # flexure slits 1.0 (was 0.84: PETG ooze and fat perimeters can close a 2-line gap)
 HOOK_X, HOOK_H, HOOK_D = (-9.0, -3.0), layers(4.8), 1.0
-PULL_LIP = lines(4)
+PULL_LIP = lines(2)   # 0.84: only 0.6 mm of lift releases a hook; a bigger lip invites lifting 2-3 mm (1.3-2 % strain across layers)
+LEADIN_JOINT = 0.8    # 45 deg chamfers where the tongue's front edge meets the strip's rear edge
 SIDE_BUTTONS = [(6.0, 50.0), (6.0, 98.0)]
 # spring tabs in the backstrap: U-slot flexures with an inward nub, preloading the collar
 SPRINGS = [180.0, 120.0, 240.0]                           # deg
-SPRING_Z, SPRING_W, SPRING_THIN, PRELOAD, NUB_W = (38.0, 60.0), 12.0, lines(2), 1.2, 5.0
+# Spring tabs 1.26 thick (band 2.52 thinned by 1.26) and longer (z 37-62). The nub reach adds the play the
+# collar loses when it seats (ribs RIB_CLR onto the belly + hook FIT_CATCH), projected on each nub's
+# direction: 1.9 mm at 180 deg, 1.55 at 120/240, so ~1.2 mm remains once seated (~0.6 % strain).
+SPRING_Z, SPRING_W, SPRING_THIN, PRELOAD, NUB_W = (37.0, 62.0), 12.0, lines(3), 1.2, 5.0
 GUTTER = dict(w=6.0, t=lines(4), h=6.0, x_max=-28.0)      # cable gutter along the backstrap's bottom
 
 

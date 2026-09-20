@@ -106,7 +106,7 @@ def slice_one(path, feet):
     import re
     d = os.path.join(OUTB, "sliced", os.path.splitext(os.path.basename(path))[0])
     os.makedirs(d, exist_ok=True)
-    r = subprocess.run([CLI, "--slice", "0", "--outputdir", d, path], capture_output=True, text=True, timeout=1500)
+    r = subprocess.run([CLI, "--slice", "0", "--outputdir", d, path], capture_output=True, text=True, timeout=3600)
     res = os.path.join(d, "result.json")
     if not os.path.exists(res):
         return dict(error="no result.json (exit %s): %s" % (r.returncode, (r.stdout + r.stderr)[-400:]))

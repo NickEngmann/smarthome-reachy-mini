@@ -10,8 +10,9 @@ dressed as a pair of denim dungarees (the display is the bib).
 Three prints, no screws:
   BEZEL        the bib: glass window, stitched border, two bib buttons and a heart engraved in
                the face; full-depth top wall with the microSD slot; a snap lip (bumps) on the
-               other three sides; bosses whose pegs go through the board's M3 holes. Face down.
-  TRAY-CRADLE  the tray (USB-C windows, switch slot, BOOT/RESET flex tabs, LED and mic holes,
+               other three sides (bumps on the ends); oval bosses with slot sockets for the tray's
+               pegs, which go through the board's M3 holes. Face down.
+  TRAY-CRADLE  the tray (USB-C openings, switch slot, BOOT/RESET pin holes, LED and mic holes,
                an overalls strap + buckle + button on each end) and, behind it, ribs contoured
                to Reachy's belly and the front half of the waistband ending in a joint strip
                on each side. Upright.
@@ -35,22 +36,23 @@ BOARD_STEP = os.path.join(REPO, "cad", "crowpanel-advanced-7in-esp32-p4", "ESP32
 
 # ------------------------------------------------------------------ snap features (B)
 def bump(side, at):
-    """Bump on the lip's outer face: flat catch toward the bezel, 45 deg lead-in toward the tray."""
+    """Bump on the lip's outer face, 45 deg on both faces: the lead-in toward the tray and the catch
+    toward the bezel face, so the bezel pulls off without prying."""
     d, y0, y1 = BUMP_D, BUMP_Y0, BUMP_Y0 + BUMP_H
     if side in ("L", "R"):
         s = -1 if side == "L" else 1
         xf = (CX0 + LIP_CLR) if side == "L" else (CX1 - LIP_CLR)
-        pts = [(xf - s * 0.05, y0), (xf - s * 0.05, y1), (xf + s * d, y1), (xf + s * d, y0 + d)]
+        pts = [(xf - s * 0.05, y0), (xf + s * d, y0 + d), (xf + s * d, y1 - d), (xf - s * 0.05, y1)]
         return cq.Workplane("XY", origin=(0, 0, at - BUMP_W / 2)).polyline(pts).close().extrude(BUMP_W)
     zf = CZ0 + LIP_CLR                                    # bottom side, outward = -z
-    pts = [(y0, zf + 0.05), (y1, zf + 0.05), (y1, zf - d), (y0 + d, zf - d)]
+    pts = [(y0, zf + 0.05), (y0 + d, zf - d), (y1 - d, zf - d), (y1, zf + 0.05)]
     return cq.Workplane("YZ", origin=(at - BUMP_W / 2, 0, 0)).polyline(pts).close().extrude(BUMP_W)
 
 
 def pocket(side, at):
     """Blind pocket in the tray's inner wall: the bump's reach past the wall face + clearance."""
     w, dep = BUMP_W + POCKET_W_EXTRA, BUMP_D - LIP_CLR + POCKET_DEPTH_EXTRA
-    y0, y1 = BUMP_Y0 - POCKET_Y_EXTRA, BUMP_Y0 + BUMP_H + 0.6
+    y0, y1 = BUMP_Y0 - POCKET_Y_EXTRA, BUMP_Y0 + BUMP_H + FIT_CATCH      # the bezel lifts at most FIT_CATCH (was 0.6)
     if side == "L":
         return box(CX0 - dep, CX0 + 0.05, y0, y1, at - w / 2, at + w / 2)
     if side == "R":
@@ -82,6 +84,11 @@ def gable_slot(xc, hw, z_root, z_tip, s, y0, y1):
     return xz_prism(outer, lo, hi).cut(xz_prism(tab, lo - 1.0, hi + 1.0)), tab
 
 
+def stadium_z(cx, cz, w, h, y0, y1):
+    """A stadium (w wide in x, h tall in z, round ends top and bottom) extruded along y from y0 to y1."""
+    return cq.Workplane("XZ", origin=(0, max(y0, y1), 0)).center(cx, cz).slot2D(h, w, angle=90).extrude(abs(y1 - y0))
+
+
 def peg(hx, hz):
     """Locating pin on a tray standoff: a teardrop (point down; it prints horizontal) with its point
     clipped to PEG_POINT_R so it passes the board's Ø3.2 hole, and a 45 deg tip."""
@@ -109,36 +116,23 @@ def build_tray(dressed=True):
     t = t.intersect(box(OX0 - 5, OX1 + 5, Y_BACK - 5, PART_Y, OZ0, top))      # teardrop tips stay inside the outline
     for hx, hz in HOLES:
         t = t.union(peg(hx, hz))
-    # left end: two USB-C windows with overmold recesses, the slide-switch slot
+    # left end: two USB-C openings sized for a plug's overmold, the slide-switch slot
     for u in USB_C:
-        t = t.cut(end_window(u["z"], u["y"], USB_W, USB_H, USB_R))
-        # relief channel in the wall's inner face from the window up past the rim: the USB-C shell slides
+        # plug-overmold opening through the whole wall (its roof is an 8 mm bridge), chamfered outside
+        t = t.cut(end_window(u["z"], u["y"], USB_OPEN_W, USB_OPEN_H, USB_OPEN_R))
+        # relief channel in the wall's inner face from the opening up past the rim: the USB-C shell slides
         # down past the wall as the board drops onto its pegs (0.1 mm from the wall without it)
-        t = t.cut(box(CX0 - USB_RELIEF_D, CX0 + 0.05, u["y"] - USB_H / 2, PART_Y + 1.0, u["z"] - USB_W / 2, u["z"] + USB_W / 2))
-        # overmold recess, its roof sloped 45 deg (a flat roof is a 1.4 mm cantilever in the upright print)
-        rw, rh, rd = USB_RECESS
-        zc = u["z"]
-        prof = [(OX0 - 0.05, zc - rw / 2), (OX0 + rd, zc - rw / 2), (OX0 + rd, zc + rw / 2), (OX0 - 0.05, zc + rw / 2 + rd + 0.05)]
-        t = t.cut(cq.Workplane("XZ", origin=(0, u["y"] + rh / 2, 0)).polyline(prof).close().extrude(rh))
+        t = t.cut(box(CX0 - USB_RELIEF_D, CX0 + 0.05, u["y"], PART_Y + 1.0, u["z"] - USB_RELIEF_W / 2, u["z"] + USB_RELIEF_W / 2))
     sw, sh, sr = SWITCH_SLOT
     t = t.cut(end_window(SWITCH["z"], SWITCH["y"], sw, sh, sr))
-    # BOOT / RESET: flex tabs in the floor with a nub on the switch, back face thinned
-    bt = BUTTON_TAB
+    # BOOT / RESET: pin holes in the floor
     for bx, bz in BUTTONS:
-        # each tab is rooted at its BOTTOM (board -z is down in the upright print) and grows up from it.
-        # Rooted at its side, the tab's lower edge printed as a 10 mm cantilever over the slit - the
-        # slicer's "floating cantilever" on this part
-        # its top closes in a 45 deg point (gable_slot), so no bridged slit roof sits right above it
-        z_root, z_tip = bz - bt["len"] * 0.62, bz + bt["len"] * 0.38
-        slot, tab = gable_slot(bx, bt["w"] / 2, z_root, z_tip, bt["slit"], Y_BACK - 1, FLOOR_IN + 0.1)
-        t = t.cut(slot)
-        thin = [(x, max(z, z_root + 1.0)) for x, z in tab]                          # thin the tab from the back
-        t = t.cut(xz_prism(thin, Y_BACK - 0.05, Y_BACK + bt["thin"]))
-        # the nub is a 4 mm pin sticking out of a floor that prints upright: a teardrop, point down,
-        # so its underside is a 45 deg slope instead of a cantilever (Bambu flagged one)
-        t = t.union(teardrop_y(bx, bz, bt["nub_d"], FLOOR_IN - 0.05, BUTTON_TOP_Y - bt["gap"]))
+        # pin hole straight onto the tact switch (teardrop roof: it lies flat in the upright print) with a
+        # countersink that guides the pin
+        t = t.cut(teardrop_y(bx, bz, BUTTON_HOLE_D, Y_BACK - 1, FLOOR_IN + 0.1, up=True))
+        t = t.cut(cone_y(bx, bz, BUTTON_HOLE_CSK, BUTTON_HOLE_D, Y_BACK - 0.05, Y_BACK + (BUTTON_HOLE_CSK - BUTTON_HOLE_D) / 2))
     for mx, mz in MICS:
-        t = t.cut(cyl_y(mx, mz, MIC_HOLE_D, Y_BACK - 1, FLOOR_IN + 0.1))
+        t = t.cut(teardrop_y(mx, mz, MIC_HOLE_D, Y_BACK - 1, FLOOR_IN + 0.1, up=True))
     for lx, lz in LEDS:
         t = t.cut(cyl_y(lx, lz, LED_HOLE_D, Y_BACK - 1, FLOOR_IN + 0.1))
     for side, at in BUMPS:
@@ -174,11 +168,19 @@ def build_bezel(dressed=True):
     # microSD slot through the top wall, rounded, and a fingertip dish outside
     sx, sy = SD["x"], SD["y"]
     lw, lh = SD_SLOT
-    b = b.cut(box(sx - lw / 2, sx + lw / 2, sy - lh / 2, sy + lh / 2, CZ1 - 1, OZ1 + 1).edges("|Z").fillet(1.0))
+    b = b.cut(box(sx - lw / 2, sx + lw / 2, sy - lh / 2, sy + lh / 2, CZ1 - 1, OZ1 + 1).edges("|Z").fillet(0.6))
+    e = SD_LEADIN
+    wi = cq.Workplane("XY", origin=(0, 0, OZ1 - e)).center(sx, sy).rect(lw - 0.1, lh - 0.1).val()
+    wo = cq.Workplane("XY", origin=(0, 0, OZ1 + 0.05)).center(sx, sy).rect(lw + 2 * e, lh + 2 * e).val()
+    b = b.cut(cq.Workplane().add(cq.Solid.makeLoft([wi, wo], True)))
     b = b.cut(cq.Workplane().add(cq.Solid.makeSphere(9.0, cq.Vector(sx, sy, OZ1 + 9.0 - 1.2))))
     # snap lip on L, R, B (the top is the bezel's own wall), bumps
     lip = box(CX0 + LIP_CLR, CX1 - LIP_CLR, PART_Y - LIP_H, PART_Y + 0.05, CZ0 + LIP_CLR, CZ1 + 0.05)
     lip = lip.cut(box(CX0 + LIP_CLR + LIP_T, CX1 - LIP_CLR - LIP_T, PART_Y - LIP_H - 1, PART_Y + 1, CZ0 + LIP_CLR + LIP_T, CZ1 + 1))
+    try:
+        lip = lip.faces("<Y").chamfer(LEADIN_LIP)        # lead-in on the lip's free edge (top of the face-down print)
+    except Exception as ex:
+        print("lip lead-in skipped:", ex)
     b = b.union(lip)
     # the lip hangs from the plate: a shelf from the walls to the lip's inner face, parting plane to plate.
     # Without it the plate's inner face (y PLATE_IN) sat 2.4 above the lip, which was held only by the top
@@ -189,12 +191,11 @@ def build_bezel(dressed=True):
     b = b.union(shelf)
     for side, at in BUMPS:
         b = b.union(bump(side, at))
-    # bosses holding the board down on its standoffs, with sockets for the tray's locating pegs
+    # oval bosses holding the board down on its standoffs, with slot sockets (longer in z) for the tray's pegs
     for hx, hz in HOLES:
         y_end = PCB_Y1 + BOSS_GAP
-        b = b.union(cyl_y(hx, hz, BOSS_D, y_end, PLATE_IN + 0.05))
-        b = b.cut(cyl_y(hx, hz, SOCKET_D, y_end - 0.1, y_end + SOCKET_DEPTH))
-        b = b.cut(cone_y(hx, hz, SOCKET_D + 2 * SOCKET_MOUTH, SOCKET_D, y_end - 0.05, y_end + SOCKET_MOUTH))
+        b = b.union(stadium_z(hx, hz, BOSS_D, BOSS_H, y_end, PLATE_IN + 0.05))
+        b = b.cut(stadium_z(hx, hz, SOCKET_D, SOCKET_H, y_end - 0.1, y_end + SOCKET_DEPTH))
     for mx, mz in MICS:
         b = b.cut(cyl_y(mx, mz, MIC_HOLE_D, PLATE_IN - 0.5, Y_FACE + 1))
     if dressed:
