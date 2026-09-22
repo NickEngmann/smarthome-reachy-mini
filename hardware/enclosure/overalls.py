@@ -6,29 +6,30 @@
     python render_overalls.py          # renders on the dressed robot
 
 Nothing here changes the three existing parts. Each strap is one print that hangs over the
-robot's own front rim, runs down the outside of the shell, and tucks into the gap BEHIND the
-display, where it hooks over the top rear edge of the bezel. Nothing touches the bib's face:
+robot's own front rim, runs down the outside of the shell, and drops into the gap BEHIND the
+display, where a foot sits in a pocket the cradle already has. Nothing touches the bib's face:
 from the front you see a strap coming over the robot's shoulder and disappearing behind the
 panel, which is what a real pair of dungarees does.
 
   rim hook      a loose C over the shell's top edge. The slot is 4.5 mm over a ~2 mm rim, so it
-                hangs rather than grips - the strap is held down by gravity and located by the
-                bezel hook, and a tight slot on a CAD-proxy rim would be a reprint.
+                hangs rather than grips - a tight slot on a CAD-proxy rim would be a reprint, and
+                the foot is what actually holds the strap.
   shell run     the strap's inner face follows the body's front surface with SHELL_CLR (1.5 mm),
                 sampled per slice across the strap's width, so it stays parallel to a shell that
                 falls away 4 mm across those 14 mm.
   gap run       leaves the shell at z 152 and leans forward into the 10-13 mm gap behind the panel.
-  bezel hook    straddles the bezel's top rear corner: a leg down the back face and a return along
-                the top surface, both 0.4 mm clear. Hidden from the front by the panel's own depth.
+  foot (v2)     two shoulders resting on the cradle's own rib tops, and a tongue hanging into the
+                slot between those ribs. See FOOT_* below - this is the mount.
 
-It is held down by gravity in the rim hook and located by the bezel hook, and in between it is
-trapped in a gap 10-13 mm wide, so neither hook has to grip anything.
+v1 hooked over the bezel's top rear corner instead: a leg down the back face and a return along
+the top surface. It worked, but it hung on one edge and put a tab on the panel's top surface. The
+pocket between the ribs is a better anchor because it is a pocket - it locates the strap in all
+three directions at once, and it was already there.
 
 WHERE IT CAN GO, and why (measured, robot frame R; see README "Bib straps"):
-  * |Y| 29..43. The cradle's ribs stand behind the display at robot |Y| 0, 25 and 50 (RIB_BX,
-    4.2 wide) and reach up to Z 137.9, so the bezel hook's leg has to miss them; 29..43 clears
-    the 22.9..27.1 rib by 1.9 mm and the 47.9..52.1 rib by 4.9. The collar tops out at Z 124 and
-    is not in the way at all.
+  * The part spans |Y| 24.5..50.5. The FOOT is centred on 37.5, the centre of the slot between
+    the ribs at 25 and 50; the STRAP is 14 wide and flush with the foot's inboard edge, centred
+    on 31.5, for the printing reason at STRAP_C below.
   * The microSD slot is not a constraint here: it opens through the bezel's top wall at board
     x 62..76 (robot |Y| 62..76), well outboard of the strap.
   * HEAD CLEARANCE. Above the front rim the whole robot stays inside robot X 41.5..43.2 (full
@@ -60,8 +61,11 @@ PRE = "reachy-crowpanel"
 NAME = "bib-strap"
 
 # ------------------------------------------------------------------------ the strap (robot R)
-STRAP_Y = 36.0                 # |Y| of the strap's centre: clear of the ribs at 25 and 50
-STRAP_W = 14.0                 # width, so the slice range is |Y| 29..43
+# |Y| 37.5 is the centre of the pocket between the cradle's ribs at Y 25 and Y 50 (RIB_T 4.2, so
+# the pocket runs 27.10..47.90). The foot drops into it. STRAP_Y is the FOOT's centre; the visible
+# strap sits at STRAP_C.
+STRAP_Y = 37.5
+STRAP_W = 14.0                 # the visible strap's width
 STRAP_T = lines(5)             # 2.10 thick, flat section (not the rounded cord of the first try)
 SLICE = 1.0                    # spacing of the lofted slices across the width
 
@@ -76,9 +80,43 @@ RIM_T = lines(4)               # 1.68: the return is thinner than the strap, to 
 RIM_LAP = 8.0                  # how far down the shell the hook's outer leg reaches
 
 SEAM = 0.10                    # how far one lofted piece sits inside the next where they overlap
+
+# The FOOT (v2), which is the whole point of this version. It uses a pocket the cradle already
+# has: behind the panel, between two of the ribs, nothing was added for it.
+#   sideways      the ribs at |Y| 25 and 50 (RIB_T 4.2) leave a slot 27.10..47.90, 20.80 wide
+#   vertically    two SHOULDERS rest on the ribs' own top edges, a flat plane at board z 53.6
+#                 (robot Z 137.86 at the panel's back face, sloping to 137.0 eight mm behind it)
+#   fore and aft  the panel's back face in front, the shell behind
+# The tongue hangs 10 mm into the pocket and stops ~4 mm clear of the collar band at Z 124 - the
+# ribs carry the strap, not the band, whose top edge sweeps 6.6 mm in X across the pocket as it
+# follows the shell and would only have borne on a millimetre of the foot.
+FOOT_W = 20.0                  # the tongue: 0.40 a side in the 20.80 slot (the ribs are ours, exact)
+SHOULDER_W = 3.0               # each side, onto the rib tops: 2.6 mm of contact on a 4.2 mm rib
+FOOT_D = 5.5                   # radial depth, CLAMPED per slice so the back never nears the shell
+FOOT_G = FIT_SLIDE             # 0.40 off the panel's back face
+FOOT_DZ_TOP = 1.5              # top, in board z above OZ1: still under the panel's front top edge
+FOOT_DZ_RIB = -(OZ1 - 53.6)    # -2.50: the ribs' top plane, where the shoulders bed
+TONGUE_DROP = 6.0              # how far the tongue hangs below that (bottom near robot Z 132)
+# The tongue's sides taper 1 mm of drop per 1 mm of width - 45 deg - and it is worth saying WHY,
+# because the intuition is backwards. The part prints as a prism extruded along Y, so robot Y is
+# the print's vertical. A tongue side that drops 10 mm over 1.5 mm of Y looks nearly vertical in
+# the part and is nearly FLAT in the print: 10 mm of plate crossed while the nozzle rises 1.5.
+# Bambu Studio called that a floating cantilever, 8.4 mm of reach at z 3.1. So the tongue is a
+# wedge: the full 20 mm at the rib plane, 8 mm across at the bottom. The shoulders do the holding.
+TONGUE_RAMP = TONGUE_DROP
+FOOT_LEADIN = 1.5              # chamfer on the tongue's bottom corners, in the XZ profile
+SHOULDER_BREAK = 0.4           # only an edge break under the shoulders - they are the bearing face
+
+# The strap is 14 wide and the foot 26, and the part prints as a prism extruded along Y. If the
+# strap sat in the middle of the foot, its whole outline - the run and the rim hook, 50 mm of it -
+# would begin 6 mm above the plate with nothing under it. Bambu Studio said so: "floating
+# cantilever", 214 mm2 of overhang and 20 mm2 on the plate. So the strap is FLUSH with the foot's
+# inboard edge instead: every outline starts at the plate and the part only ever loses material
+# going up. The strap's Y is free - nothing about the look depends on it - and inboard also keeps
+# the run off the shoulder, where the body falls away fastest.
+STRAP_C = STRAP_Y - FOOT_W / 2 - SHOULDER_W + STRAP_W / 2     # 31.5
+
 BEZ_G = FIT_SLIDE              # 0.40 to the bezel
-BEZ_LEG = 9.0                  # down the bezel's back face
-BEZ_RET = 8.0                  # along the bezel's top surface (its top is 21.3 mm deep)
 
 STITCH_IN, STITCH_W, STITCH_D = 2.2, lines(2), 0.5      # edge stitching, as on the backstrap's straps
 
@@ -96,6 +134,19 @@ def _p(o, *terms):
     for k, v in terms:
         x, z = x + k * v[0], z + k * v[1]
     return (x, z)
+
+
+def back_x(z):
+    """Robot X of the panel's back face at height z. The face is the plane board y = Y_BACK, so
+    it leans back with the display's 6 deg tilt: 0.105 mm of X per mm of Z."""
+    return C_X + (C_Z - z) * (-D_BACK[0] / D_BACK[1])
+
+
+def bp(dy, dz):
+    """Robot XZ of the point dy forward and dz up from the panel's top rear corner, in the PANEL's
+    own axes. The foot is built in these because every surface it meets is one of the panel's: the
+    back face is board y constant, the ribs' top is board z constant."""
+    return _p((C_X, C_Z), (dy, U_TOP), (dz, N_TOP))
 
 
 # ------------------------------------------------------- the body's front surface (local, mm)
@@ -220,22 +271,62 @@ def _gap_profile(y, g, t):
     # overlap from z 150 to 152 and must not share a face there.
     x_shell = shell_x(y, Z_LEAVE) + g + SEAM
     x_out = shell_x(y, Z_LEAVE) + g + t - SEAM
-    on_back = _p((C_X, C_Z), (BEZ_G, N_BACK), (2.0, D_BACK))  # against the back face, 2 mm below the corner
-    return [(x_shell, Z_LEAVE), _p(on_back, (t, N_BACK)), on_back, (x_out, Z_LEAVE)]
+    inset = 1.1                                               # ends strictly inside the foot
+    return [(x_shell, Z_LEAVE),
+            bp(-FOOT_G - inset - t, FOOT_DZ_TOP - inset),
+            bp(-FOOT_G - inset, FOOT_DZ_TOP - inset),
+            (x_out, Z_LEAVE)]
 
 
-def _bezel_profile(g, t):
-    """Straddles the bezel's top rear corner: a leg down the back face and a return along the top
-    surface, both g clear. U_TOP = -N_BACK and D_BACK = -N_TOP, so the two faces are orthogonal
-    and the offset corners are just ci = C + g(N_BACK + N_TOP), co = ci + t(N_BACK + N_TOP)."""
-    ci = _p((C_X, C_Z), (g, N_BACK), (g, N_TOP))
-    co = _p(ci, (t, N_BACK), (t, N_TOP))
-    return [_p(ci, (BEZ_LEG, D_BACK)),                        # leg tip, on the back face
-            ci,                                               # up to the inner corner
-            _p(ci, (BEZ_RET, U_TOP)),                         # forward along the top surface
-            _p(ci, (BEZ_RET, U_TOP), (t, N_TOP)),             # across the return's tip
-            co,                                               # back to the outer corner
-            _p(co, (BEZ_LEG + t, D_BACK))]                    # down the leg's outer face
+def _foot_profile(y):
+    """The foot: drops into the pocket between two of the cradle's ribs and lands on the top edge
+    of the collar band. The front face sits FOOT_G off the panel's back (and leans with it), the
+    back face FOOT_D behind that, and the bottom is horizontal so it beds flat on the band.
+
+    Both bottom corners are chamfered, and the bottom RISES toward the outermost slices, which
+    puts the same 45 deg lead-in on the side corners: the foot has to be dropped blind down a
+    20.8 mm slot, and nothing in the cradle has a lead-in of its own."""
+    dz, c, d = _foot_shape(y)
+    return [bp(-FOOT_G, FOOT_DZ_TOP),                         # top, at the panel's back face
+            bp(-FOOT_G, dz + c),                              # down the front face
+            bp(-FOOT_G - c, dz),                              # chamfer onto the bottom
+            bp(-FOOT_G - d + c, dz),                          # across the bottom (the bearing face)
+            bp(-FOOT_G - d, dz + c),                          # chamfer up the back
+            bp(-FOOT_G - d, FOOT_DZ_TOP)]                     # up the back face
+
+
+def _foot_shape(y):
+    """(bottom dz, chamfer, depth) for the foot at this slice.
+
+    Inside the slot the tongue hangs TONGUE_DROP below the ribs' top plane, tapering back up to
+    it over the last TONGUE_RAMP of width; outside it the shoulder stops ON that plane. The step
+    between the two IS the mount, so _foot_slices doubles up either side of it.
+
+    The depth is clamped so the back face keeps SHELL_CLR from the body at every height the slice
+    spans: the slot is ~10 mm deep at its centre but only ~4.7 at its inboard edge, where the
+    shell comes closest to the panel."""
+    a = abs(abs(y) - STRAP_Y)
+    half = FOOT_W / 2
+    if a < half:
+        dz, c = FOOT_DZ_RIB - TONGUE_DROP + max(0.0, a - (half - TONGUE_RAMP)), FOOT_LEADIN
+    else:
+        dz, c = FOOT_DZ_RIB, SHOULDER_BREAK
+    lo, hi = bp(-FOOT_G, dz)[1], bp(-FOOT_G, FOOT_DZ_TOP)[1]
+    room = min((back_x(z) - FOOT_G) - (shell_x(y, z) + SHELL_CLR)
+               for z in (lo + (hi - lo) * i / 6.0 for i in range(7)))
+    return dz, c, max(2.5, min(FOOT_D, room))
+
+
+def _foot_slices(sy):
+    """Y stations for the foot: doubled 0.01 either side of the slot's edge, so the step from
+    tongue to shoulder lofts as a vertical face rather than a 1 mm ramp."""
+    half, out = FOOT_W / 2, FOOT_W / 2 + SHOULDER_W
+    ds = [-out + i for i in range(int(out - half))]
+    ds += [-half - 0.01, -half + 0.01]
+    ds += list(range(-int(half) + 1, int(half)))
+    ds += [half - 0.01, half + 0.01]
+    ds += [half + 1.0 + i for i in range(int(out - half))]
+    return sorted(sy * (STRAP_Y + d) for d in ds)
 
 
 def _wire(pts, y):
@@ -249,11 +340,11 @@ def _loft(profile, ys, ruled=True):
     return cq.Workplane().add(cq.Solid.makeLoft([_wire(profile(y), y) for y in ys], ruled))
 
 
-def _slices(sy):
-    """Y stations across the strap. Every slice carries the same vertex count, so the ruled loft
-    between them is clean; the long edges are left square (a 2D offset would round the corners of
-    some profiles and not others, and the loft would not match up)."""
-    a, b = sorted((sy * (STRAP_Y - STRAP_W / 2), sy * (STRAP_Y + STRAP_W / 2)))
+def _slices(sy, w=STRAP_W):
+    """Y stations across a piece of width w. Every slice carries the same vertex count, so the
+    ruled loft between them is clean; the long edges are left square (a 2D offset would round the
+    corners of some profiles and not others, and the loft would not match up)."""
+    a, b = sorted((sy * (STRAP_C - w / 2), sy * (STRAP_C + w / 2)))
     n = max(2, int(round((b - a) / SLICE)))
     return [a + (b - a) * i / n for i in range(n + 1)]
 
@@ -265,7 +356,7 @@ def build(sy=1, dressed=True):
     part = _loft(lambda y: _run_profile(y, Z_RUN0, rim(y)[1] - RIM_LAP + 3.0, g, t), ys)
     part = part.union(_loft(lambda y: _rim_profile(y, g, t), ys))
     part = part.union(_loft(lambda y: _gap_profile(y, g, t), ys))
-    part = part.union(_loft(lambda y: _bezel_profile(BEZ_G, t), ys))
+    part = part.union(_loft(_foot_profile, _foot_slices(sy)))
     if dressed:
         part = part.cut(_stitch(sy, ys, g, t))
     return part
@@ -285,7 +376,7 @@ def _stitch(sy, ys, g, t):
     skins = outer.cut(inner)
     tool = None
     for s in (-1, 1):
-        yc = sy * (STRAP_Y + s * (STRAP_W / 2 - STITCH_IN))
+        yc = sy * (STRAP_C + s * (STRAP_W / 2 - STITCH_IN))   # the STRAP's centre, not the foot's
         lo, hi = sorted((yc - STITCH_W / 2, yc + STITCH_W / 2))
         one = skins.intersect(box(-400, 400, lo, hi, 0, 400))
         tool = one if tool is None else tool.union(one)
@@ -293,14 +384,14 @@ def _stitch(sy, ys, g, t):
 
 
 # --------------------------------------------------------------------------------- output
-def to_bed(wp):
+def to_bed(wp, sy=1):
     """On the plate the profile lies flat and the strap's width is the print Z.
 
     That is nearly a prism, but not quite: the shell falls away 4 mm across the strap's 14 mm and
     the rim drops 5.3 mm, so the layers do shift. Measured on the export - 73-77 mm2 of face over
     45 deg, and short bridges of 4-7 mm where the hook bights lie. Bambu Studio slices it with no
     support and no warning (28 min, 5.5 g the pair), so the bridges are within what PETG spans."""
-    p = wp.rotate((0, 0, 0), (1, 0, 0), 90)
+    p = wp.rotate((0, 0, 0), (1, 0, 0), sy * 90)      # each side turned so ITS flush edge is down
     v, _ = p.val().tessellate(0.05, 0.2)
     xs, ys, zs = [q.x for q in v], [q.y for q in v], [q.z for q in v]
     return p.translate((-(min(xs) + max(xs)) / 2, -(min(ys) + max(ys)) / 2, -min(zs)))
@@ -484,7 +575,8 @@ def main(argv=None):
         report(n, p)
         cq.exporters.export(p, os.path.join(E.OUT, "step", "%s-%s.step" % (PRE, n)))
         cq.exporters.export(p, os.path.join(E.OUT, "stl", "%s-%s.stl" % (PRE, n)), tolerance=0.02, angularTolerance=0.1)
-        cq.exporters.export(to_bed(p), os.path.join(E.OUT, "print", "%s-%s-print.stl" % (PRE, n)),
+        cq.exporters.export(to_bed(p, 1 if side == "left" else -1),
+                            os.path.join(E.OUT, "print", "%s-%s-print.stl" % (PRE, n)),
                             tolerance=0.02, angularTolerance=0.1)
     print("written to", E.OUT)
     if args.check and not check():

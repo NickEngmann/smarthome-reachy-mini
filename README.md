@@ -25,7 +25,7 @@ This is the current direction, not final software decisions. It is written up in
 1. Open `hardware/enclosure/out/bambu/reachy-dungarees-tray-cradle.3mf` and `reachy-dungarees-bezel-backstrap.3mf` in Bambu Studio.
 2. Load PETG and print. Both projects are set for an X1C with a textured PEI plate, 0.20 mm layers, and no supports.
 3. Assemble: board into the tray, bezel snapped on, tray-cradle against the belly, backstrap slid on from behind until the four tabs click.
-4. Optional: `reachy-dungarees-bib-straps.3mf` (28 min, 5.5 g) adds the two shoulder straps. They hang over the robot's own front rim and hook behind the panel, and they change nothing about the three parts above — see the enclosure README's "Bib straps".
+4. Optional: `reachy-dungarees-bib-straps.3mf` (39 min, 6.0 g) adds the two shoulder straps. They hang over the robot's own front rim and drop into the pocket the cradle already has behind the panel, and they change nothing about the three parts above — see the enclosure README's "Bib straps".
 
 Check the enclosure README's Status section before printing: it records the last verified build. It also lists the tolerances, load reasoning and open risks.
 

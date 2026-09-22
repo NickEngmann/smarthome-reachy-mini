@@ -116,11 +116,30 @@ only thing that says *where* a slicer warning is, because the Bambu CLI says nei
   `out/step`, `out/stl` and the slicer diagnostics stay out of git.
 
 **2026-09-21: the bib straps (`overalls.py`), an optional fourth and fifth print.** Two clip-on
-shoulder straps that hang over the robot's own front rim and hook behind the panel. They change
-**nothing** about the three parts above - that was the owner's condition - so `enclosure.py` was
-never re-run for them. Checked the same way and all passing: 0.000 mm3 against each existing part,
-1.06 mm to the shell on the run, 0.57 mm at the rim hook, watertight, islands clean, and 28 min /
-5.5 g with no slicer warning and no support. Three things this cost, worth not rediscovering:
+shoulder straps that hang over the robot's own front rim and drop into the gap behind the panel.
+They change **nothing** about the three parts above - that was the owner's condition - so
+`enclosure.py` was never re-run for them. Checked the same way and all passing: 0.000 mm3 against
+each existing part, 1.23 mm to the shell on the run, 0.66 mm at the rim hook, watertight, islands
+clean, and 39 min / 6.0 g with no slicer warning and no support.
+
+**v2 is the one to keep.** v1 hooked over the bezel's top rear corner; v2's foot uses a pocket the
+cradle already had - the slot between the ribs at |Y| 25 and 50 (27.10..47.90, 20.80 wide) with
+their tops as a bearing plane at board z 53.6. Two shoulders bed on the rib tops, a tongue hangs
+in the slot, the panel's back and the shell take it fore-and-aft. Nothing was added to the cradle.
+The collar band's top edge looked like the obvious ledge and is not: it sweeps 6.6 mm in X across
+the pocket as it follows the shell, so a flat foot would bear on ~1 mm at one end and miss at the
+other. Five things this cost, worth not rediscovering:
+
+- **In the print, robot Y is UP.** The part is a prism extruded along Y, so an overhang has to be
+  judged in that frame and the intuition inverts. A tongue side dropping 10 mm over 1.5 mm of Y
+  looks nearly vertical in CAD and is nearly flat in the print - 10 mm of plate crossed while the
+  nozzle rises 1.5. The tongue is a 45 deg wedge now (1 mm of drop per 1 mm of width).
+- **A part whose width changes cannot be centred.** The foot is 26 wide and the strap 14; centred,
+  the strap's whole outline began 6 mm above the plate on nothing - 20 mm2 of plate contact and a
+  "floating cantilever". The strap is flush with the foot's inboard edge instead (`STRAP_C`), and
+  `to_bed` turns each side so its own flush edge is down. 135 mm2 on the plate after that.
+  **`islands.py` called both of these CLEAN**: it finds regions with nothing at all beneath them,
+  and both had a sliver of contact. Only the slicer's own warning caught them - run it.
 
 - **Do not sample the body mesh in a window up here.** `shell.py`'s "max radius in a +-5 mm ring"
   is right for its 10 mm rings and wrong above z 150, where a +-2.5 mm band at Y 30 can contain no
