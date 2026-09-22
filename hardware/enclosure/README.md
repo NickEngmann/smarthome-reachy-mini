@@ -40,10 +40,18 @@ about the bezel, tray-cradle or backstrap changes — lift the straps off and th
 as it was.
 
 ```
-python overalls.py [--plain]     # build and export the pair (~1 min)  [--plain: no stitching]
-python overalls.py --check-only  # fit checks against the exported STEPs
-python render_overalls.py        # out/render/overalls-*.png
+python overalls.py [--plain]         # build and export the pair (~1 min)  [--plain: no stitching]
+python overalls.py --check-only      # fit checks against the exported STEPs
+python render_overalls.py            # 3-D views + sections -> out/render/overalls-*.png
+python render_overalls.py --section  # just the sections (seconds: no 3-D painting)
 ```
+
+`overalls-section*.png` are the pictures that actually show the fit: every part cut by the plane
+robot Y = 36.37 and drawn filled, so the rim hook on the shell's top edge, the 1.5 mm the run stands
+off the body and the bezel hook straddling the panel's top rear corner are geometry rather than a
+claim. A 3-D render of a 2 mm strap against a curved shell cannot show a 1 mm gap. There is no tight
+3-D close-up of either hook for the same reason: `render.py` depth-sorts one collection by centroid,
+which breaks down at close range on the shell's coarse triangles.
 
 Each strap is four lofted pieces unioned, sliced every 1 mm across the strap's 14 mm width so every
 slice follows the body at its own Y. It is held down by gravity in the rim hook and located by the
@@ -228,6 +236,8 @@ Added without touching the three parts above: `overalls.py`, then `overalls.py -
 - **Mesh check: passed.** All four STLs, 0 open edges, 100 % normals.
 - **Island scan: clean.** The overhang scan leaves 73–77 mm² over 45° and bridges of 4–7 mm where
   the hook bights lie; the slicer takes them without support or warning.
+- **Section at Y = 36.37: one closed loop**, so the strap is continuous from the rim hook to the
+  bezel hook — `out/render/overalls-section.png`, with the two hooks enlarged beside it.
 
 | Project | Time | PETG | Supports | Slicer warnings |
 |---|---|---|---|---|
