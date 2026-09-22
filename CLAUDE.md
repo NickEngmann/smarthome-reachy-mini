@@ -9,6 +9,11 @@ whether the change is good.
 runbook live in the sibling repo `../smarthome-reachy-mini-display`, which has its own CLAUDE.md.
 Read that one for the system, the robot and the panel; read this one for the plastic.
 
+**The robot's own software state is recorded there too** (2026-09-22): `robot/backup.py` snapshots
+what is installed on the Reachy Mini into `robot/snapshot/`, and `docs/robot-provisioning.md` is the
+order to rebuild it from a blank SD card. The tokens are gitignored on that side; keep a copy off
+disk. This repo stays hardware only - one place for the code, one for the plastic.
+
 ## 0. Hard rules
 
 1. **`python` is the CAD interpreter, and it is Python 3.11.** The scripts here need
