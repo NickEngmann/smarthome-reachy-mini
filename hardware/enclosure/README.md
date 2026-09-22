@@ -235,7 +235,7 @@ Added without touching the three parts above: `overalls.py`, then `overalls.py -
 | Part | Volume | Robot-frame extent (mm) | Checks |
 |---|---|---|---|
 | bib-strap-left | 2.49 cm³ | x 47.9…75.0, y 24.5…50.5, z 131.4…186.0 | watertight; no floating islands |
-| bib-strap-right | 2.07 cm³ | mirrored in y | identical — it is the left one mirrored, not a second build |
+| bib-strap-right | 2.49 cm³ | mirrored in y | identical — it is the left one mirrored, not a second build |
 
 - **Fit check: passed.** 0.000 mm³ against the bezel, the tray-cradle and the backstrap on both
   sides, and 0.000 mm³ against the shell proxy below z 139.

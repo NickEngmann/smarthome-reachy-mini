@@ -74,8 +74,9 @@ Z_LEAVE = 152.0                # the strap leaves the shell here and leans into 
 Z_RUN0 = 150.0                 # the shell run starts here (it overlaps the gap run by 2 mm)
 
 RIM_SLOT = 4.5                 # the C's slot over the rim: deliberately loose on a ~2 mm rim
-RIM_G = 0.8                    # clearance above the rim's top edge
 RIM_DN = 3.0                   # how far the return hangs down inside the rim
+# (the hook's clearance ABOVE the rim is SHELL_G, the same 1.5 the run uses - there is no separate
+# constant for it. There was one, RIM_G = 0.8, and nothing ever read it.)
 RIM_T = lines(4)               # 1.68: the return is thinner than the strap, to stay out of the way
 RIM_LAP = 8.0                  # how far down the shell the hook's outer leg reaches
 
@@ -116,15 +117,13 @@ SHOULDER_BREAK = 0.4           # only an edge break under the shoulders - they a
 # the run off the shoulder, where the body falls away fastest.
 STRAP_C = STRAP_Y - FOOT_W / 2 - SHOULDER_W + STRAP_W / 2     # 31.5
 
-BEZ_G = FIT_SLIDE              # 0.40 to the bezel
-
 STITCH_IN, STITCH_W, STITCH_D = 2.2, lines(2), 0.5      # edge stitching, as on the backstrap's straps
 
-# The bezel's top rear corner and the board axes, in the robot XZ plane (all uniform across board x)
+# The panel's top rear corner and the board axes, in the robot XZ plane (all uniform across board
+# x). bp() builds the foot in these, because every surface it meets is one of the panel's.
 C_X, C_Z = (lambda p: (p[0], p[2]))(pt_robot((0.0, Y_BACK, OZ1)))
-U_TOP = (lambda v: (v[0], v[2]))(rot_b_to_r((0, 1, 0)))       # forward along the bezel's top surface
-N_TOP = (lambda v: (v[0], v[2]))(rot_b_to_r((0, 0, 1)))       # out of the top surface
-N_BACK = (lambda v: (v[0], v[2]))(rot_b_to_r((0, -1, 0)))     # out of the back face
+U_TOP = (lambda v: (v[0], v[2]))(rot_b_to_r((0, 1, 0)))       # forward along the panel's top surface
+N_TOP = (lambda v: (v[0], v[2]))(rot_b_to_r((0, 0, 1)))       # out of the top surface, i.e. board +z
 D_BACK = (lambda v: (v[0], v[2]))(rot_b_to_r((0, 0, -1)))     # down the back face
 
 
@@ -385,12 +384,17 @@ def _stitch(sy, ys, g, t):
 
 # --------------------------------------------------------------------------------- output
 def to_bed(wp, sy=1):
-    """On the plate the profile lies flat and the strap's width is the print Z.
+    """On the plate the profile lies flat and robot Y is the print's vertical.
 
-    That is nearly a prism, but not quite: the shell falls away 4 mm across the strap's 14 mm and
-    the rim drops 5.3 mm, so the layers do shift. Measured on the export - 73-77 mm2 of face over
-    45 deg, and short bridges of 4-7 mm where the hook bights lie. Bambu Studio slices it with no
-    support and no warning (28 min, 5.5 g the pair), so the bridges are within what PETG spans."""
+    sy turns each side so ITS OWN flush edge is down. The strap is flush with the foot's inboard
+    edge (see STRAP_C), which is min Y on the left and max Y on the right; turning both the same
+    way would stand the right one on a shoulder and its whole strap outline would start 6 mm up in
+    mid-air.
+
+    Nearly a prism, but not quite: the shell falls away across the strap's width and the rim drops
+    5.3 mm, so the layers do shift. Measured on the export - 91 mm2 of face over 45 deg, 135 mm2 on
+    the plate, and a short bridge under the rim hook's bight. Bambu Studio slices it with no
+    support and no warning (39 min, 6.0 g the pair)."""
     p = wp.rotate((0, 0, 0), (1, 0, 0), sy * 90)      # each side turned so ITS flush edge is down
     v, _ = p.val().tessellate(0.05, 0.2)
     xs, ys, zs = [q.x for q in v], [q.y for q in v], [q.z for q in v]
