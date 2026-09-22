@@ -20,6 +20,7 @@ This is the current direction, not final software decisions. It is written up in
 | [`hardware/enclosure/`](hardware/enclosure/README.md) | The dungarees enclosure: cadquery source, fit, mesh and printability checks, renders, and **Bambu Studio projects ready to print** (`out/bambu/*.3mf`) |
 | [`cad/`](cad/README.md) | Reference models: Reachy Mini body and robot (assembled from Pollen's URDF), Elecrow's official CrowPanel P4 STEP and STL conversions, and two community cases (the ACOS enclosure for the S3 Advance 7", and a two-part case 3MF) |
 | `elecrow-crowpanel-advance-7-enclosure-model_files.zip`, `elecrow-panel.3mf` | The original community-case downloads, also unpacked under `cad/community-cases/` |
+| [`docs/TODO.md`](docs/TODO.md) | Hardware ideas not built yet, with whatever has already been measured for them. First up: **a hat**, and what the antennas and the head's microphones will and will not allow |
 
 ## Print the enclosure
 1. Open `hardware/enclosure/out/bambu/reachy-dungarees-tray-cradle.3mf` and `reachy-dungarees-bezel-backstrap.3mf` in Bambu Studio.
