@@ -44,6 +44,13 @@ PROJECTS = [
     dict(name="reachy-dungarees-bezel-backstrap", preset="Bambu PETG Basic @BBL X1C", colours=[DENIM],
          process=dict(COMMON, brim_type="no_brim"),
          rows=[[("bezel", 0.0, {})], [("backstrap", 90.0, dict(BRIM))]]),
+    # The two bib straps: a small, quick plate of their own, so they can be printed (or reprinted in
+    # another colour) without touching the three parts that are already on the robot. They lie with
+    # their profile on the plate and their 14 mm width as the print Z, which makes each one a
+    # near-prism - no overhang anywhere, so no support; a brim because the footprint is a 2.1 mm line.
+    dict(name="reachy-dungarees-bib-straps", preset="Bambu PETG Basic @BBL X1C", colours=[DENIM],
+         process=dict(COMMON, brim_type="no_brim"),
+         rows=[[("bib-strap-left", 0.0, dict(BRIM)), ("bib-strap-right", 0.0, dict(BRIM))]]),
 ]
 
 
@@ -135,11 +142,20 @@ def slice_one(path, feet):
 
 def main():
     os.makedirs(OUTB, exist_ok=True)
-    built = [build(p) for p in PROJECTS]
+    # --only <substring>: write and slice just the projects whose name matches, so a change to one
+    # plate does not re-slice (and re-time) the two that are already recorded in the README
+    only = None
+    for i, a in enumerate(sys.argv):
+        if a == "--only" and i + 1 < len(sys.argv):
+            only = sys.argv[i + 1]
+    projects = [p for p in PROJECTS if only is None or only in p["name"]]
+    if not projects:
+        print("no project matches --only %s" % only); return
+    built = [build(p) for p in projects]
     if "--slice" not in sys.argv:
         return
     print("overhang audit (print orientation):")
-    for n in ("tray-cradle", "bezel", "backstrap"):
+    for n in sorted({n for p in projects for row in p["rows"] for n, _, _ in row}):
         audit(n)
     if not os.path.exists(CLI):
         print("no Bambu Studio at %s: projects written, not sliced" % CLI); return

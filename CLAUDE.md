@@ -56,6 +56,9 @@ python islands.py                # layer scan: floating islands, with locations
 python islands.py --overhangs    # layer scan: cantilever and bridge regions, with locations
 python bambu.py                  # out/bambu/*.3mf, one project per plate
 python bambu.py --slice          # + overhang audit + Bambu Studio CLI slice: time, grams, warnings
+python bambu.py --only <name>    # ...just the matching projects, so the others are not re-timed
+python overalls.py [--check]     # the two optional bib straps (~1 min); --check-only for the fits
+python render_overalls.py        # out/render/overalls-*.png
 python probe.py                  # diagnostic: where the slicer would put support, clustered
 python render.py                 # out/render/*.png (matplotlib, no GPU)
 python bisect_backstrap.py <v>   # diagnostic: which feature group causes a slicer warning
@@ -111,6 +114,26 @@ only thing that says *where* a slicer warning is, because the Bambu CLI says nei
   reasoned or checked in CAD, never confirmed in plastic - say so in that order.
 - The printable outputs are now committed (`out/print/*.stl`, `out/bambu/*.3mf`, `out/render/*.png`);
   `out/step`, `out/stl` and the slicer diagnostics stay out of git.
+
+**2026-09-21: the bib straps (`overalls.py`), an optional fourth and fifth print.** Two clip-on
+shoulder straps that hang over the robot's own front rim and hook behind the panel. They change
+**nothing** about the three parts above - that was the owner's condition - so `enclosure.py` was
+never re-run for them. Checked the same way and all passing: 0.000 mm3 against each existing part,
+1.06 mm to the shell on the run, 0.57 mm at the rim hook, watertight, islands clean, and 28 min /
+5.5 g with no slicer warning and no support. Three things this cost, worth not rediscovering:
+
+- **Do not sample the body mesh in a window up here.** `shell.py`'s "max radius in a +-5 mm ring"
+  is right for its 10 mm rings and wrong above z 150, where a +-2.5 mm band at Y 30 can contain no
+  vertex at all between z 167 and 173: it interpolated across the gap and read the surface 1.4 mm
+  too far in, putting 8 strap points inside the shell wall. `overalls._front()` cuts the TRIANGLES
+  with the plane instead. The error was invisible to a vertex-window check and obvious to a
+  point-to-triangle one, which is why `overalls.check()` uses the latter.
+- **`makeLoft(..., ruled=False)` builds a valid solid that every boolean then refuses.**
+  `run.union(rim)` came back with 0 solids and 0 mm3. Always ruled; answer the faceting with more
+  slices.
+- **Two lofted pieces must overlap, never meet tangentially.** Where the hook's taper met the run's
+  face exactly, the union left sliver faces - 6 degenerate triangles and 6 non-manifold edges that
+  `check_mesh.py` caught and OCC's `isValid()` did not. `SEAM = 0.10` sets one piece inside the next.
 
 ## 5. Style
 

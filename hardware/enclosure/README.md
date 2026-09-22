@@ -17,6 +17,8 @@ python islands.py --overhangs    # layer scan: cantilever/bridge regions with lo
 python bambu.py --slice          # out/bambu/*.3mf + overhang audit + Bambu Studio CLI slice (time, grams, warnings)
 python probe.py                  # diagnostic: re-slice with supports on critical regions, report where they touch
 python render.py                 # out/render/*.png
+python overalls.py [--check]     # the two optional bib straps (~1 min); --check-only for the fits
+python render_overalls.py        # out/render/overalls-*.png
 ```
 After a build, everything below `enclosure.py` reads only its exports, so the checks can run side by side. Run `bambu.py --slice` on its own, though: with the other checks competing for the CPU, a slice of the tray-cradle ran past 25 minutes. `python enclosure.py --check` builds and checks in one go (slower).
 
@@ -27,15 +29,64 @@ After a build, everything below `enclosure.py` reads only its exports, so the ch
 | **bezel** | face down | Window over the active area. A full-depth top wall holds the **microSD slot**. A snap lip hangs from a shelf on the plate on three sides, with 45° bumps on the two ends. Oval bosses hold the board down, with slot sockets for the tray's locating pegs. | Dashed stitch round the bib, two bib buttons above the screen, and a heart below it. All are engraved, because a face-down print can't have raised detail. |
 | **tray-cradle** | upright | The tray has **2× USB-C openings** sized for a plug's overmold and a **switch slot** on one end. The floor has **BOOT/RESET pin holes** plus LED and mic holes. Four standoffs carry **locating pegs** through the board's M3 holes, and relief channels above the USB-C windows let the connectors slide down past the wall. Behind the tray, ribs bear on the belly and the front half of the waistband ends in a side-joint strip. | A strap, buckle and engraved button on each end of the bib, a stitched waistband, belt loops and a rolled cuff. |
 | **backstrap** | upright | The rest of the collar. At each side, a tongue carries two flex tabs whose hooks click into windows in the strip. Three **spring tabs** preload the collar, and a **cable gutter** runs along the bottom. | Crossed back straps with edge stitching and teardrop buttons, two back pockets, a waistband with belt loops, and side buttons. The gutter doubles as the cuff. |
+| **bib-strap ×2** | on its side | **Optional, cosmetic.** Hangs over the robot's own front rim, runs down the outside of the shell, and tucks into the gap behind the display, where it hooks over the bezel's top rear corner. The other three parts are untouched. | The two shoulder straps of the dungarees, 14 × 2.1 mm with edge stitching, completing the crossed straps already moulded on the backstrap. |
+
+## Bib straps
+
+Two small clip-on prints (`overalls.py`), added after the first three were done. They are what makes
+the robot read as *wearing* the dungarees rather than carrying a bib: from the front a strap comes
+over each shoulder and disappears behind the panel. Nothing touches the bib's face, and nothing
+about the bezel, tray-cradle or backstrap changes — lift the straps off and the enclosure is exactly
+as it was.
+
+```
+python overalls.py [--plain]     # build and export the pair (~1 min)  [--plain: no stitching]
+python overalls.py --check-only  # fit checks against the exported STEPs
+python render_overalls.py        # out/render/overalls-*.png
+```
+
+Each strap is four lofted pieces unioned, sliced every 1 mm across the strap's 14 mm width so every
+slice follows the body at its own Y. It is held down by gravity in the rim hook and located by the
+bezel hook, and in between it is trapped in a gap 10–13 mm wide, so neither hook has to grip.
+
+| Piece | What it does |
+|---|---|
+| rim hook | A loose C over the shell's top edge: a 4.5 mm slot over a ~2 mm rim, reaching 3 mm down inside. Deliberately loose — the strap hangs rather than grips, and a tight slot on a rim known only from CAD is a reprint. |
+| shell run | Inner face at `SHELL_CLR` (1.5 mm) off the body's front, from z 150 up to the rim. |
+| gap run | Leaves the shell at z 152 and leans forward into the gap behind the panel. |
+| bezel hook | Straddles the bezel's top rear corner: a 9 mm leg down the back face and an 8 mm return along the top surface, both `FIT_SLIDE` (0.4) clear. Hidden from the front behind the panel's own 21 mm depth. |
+
+**Where it can go, and why** (robot frame, all measured):
+
+- **|Y| 29…43.** The cradle's ribs stand behind the display at |Y| 0, 25 and 50 and reach up to
+  Z 137.9, so the bezel hook's leg has to miss them: 29…43 clears the 22.9…27.1 rib by 1.9 mm and
+  the 47.9…52.1 rib by 4.9. The collar tops out at Z 124 and is nowhere near.
+- **The microSD is not a constraint here.** It opens through the bezel's top wall at |Y| 62…76, well
+  outboard of the strap. It *was* the constraint for the rejected front-clip version.
+- **Head clearance.** Above the front rim the whole robot stays inside X 41.5…43.2 (full mesh,
+  z 185…196) while the rim itself is at X 51…55 — about 12 mm of clear space just inside it. The
+  measured distance from the rim hook to anything above z 184 and inboard of X 46 is **6.88 mm**.
+  That is Pollen's CAD in the URDF zero pose, **not a measured head sweep**: check it on the robot.
+
+**Rejected on the way**, so it is not tried again: straps clipped to the *front* of the bib and
+rising above the display. The display's top corners sit 43 mm in front of the body, so such a strap
+either spans that gap as a strut or stops in mid-air — three variants were built and rendered, and
+none read as a strap from the side. Straps hanging *below* the display have nowhere to go either:
+the enclosure's cuff ends at z 30 and the robot's turning foot starts at z 22, and the foot does not
+yaw with the body.
 
 ## Printing (Bambu Lab X1C)
 
-The two projects are ready to open in Bambu Studio: `out/bambu/*.3mf`. Settings start from your saved X1C project (`bambu/project_settings.json`, taken from luna-hardware): 0.4 mm nozzle, textured PEI, 0.20 mm Standard. Filament is Bambu's own **PETG Basic @BBL X1C** preset.
+The three projects are ready to open in Bambu Studio: `out/bambu/*.3mf`. Settings start from your saved X1C project (`bambu/project_settings.json`, taken from luna-hardware): 0.4 mm nozzle, textured PEI, 0.20 mm Standard. Filament is Bambu's own **PETG Basic @BBL X1C** preset.
 
 | Project | Plate | Per-part settings |
 |---|---|---|
 | `reachy-dungarees-tray-cradle.3mf` | the tray-cradle upright, as it sits on the robot | 5 mm outer brim |
 | `reachy-dungarees-bezel-backstrap.3mf` | the bezel face down (textured PEI gives the bib a fabric-like finish), with the backstrap upright and turned 90° beside it | backstrap: 5 mm outer brim |
+| `reachy-dungarees-bib-straps.3mf` | both bib straps on their sides, profile flat on the plate and the 14 mm width as the print Z | 5 mm outer brim each (the footprint is a 2.1 mm line) |
+
+`bambu.py --only <substring>` writes and slices just the projects whose name matches, so a change
+to one plate does not re-time the others.
 
 Common process settings:
 - **Walls and infill:** 3 walls (the collar band is solid), 5 top and 4 bottom layers, 20 % gyroid.
@@ -49,6 +100,7 @@ Latest CLI slice (v0.5):
 |---|---|---|---|---|
 | tray-cradle | 4 h 52 | 152 g | none | none |
 | bezel + backstrap | 3 h 42 | 114 g | none | none |
+| bib straps (both) | 28 min | 5.5 g | none | none |
 
 **Colour:** a denim-blue PETG. With an AMS, add a height-range filament change on the upright parts for a brown cuff (z 0–4) and waistband (z 32–48 on the plate).
 
@@ -123,6 +175,10 @@ Every fit is one of these classes (`geom.py`). Walls are whole line widths (`lin
 3. Put the tray-cradle against Reachy's belly. The front half of the waistband slides on from the front.
 4. Slide the backstrap on from behind. The spring nubs drag on the shell, and the four joint tabs click into their windows.
 5. To take it off, lift the four tabs by their pull lips (1 mm is enough) and slide the backstrap back.
+6. **Bib straps, if you printed them.** Last, and by hand. Drop each one into the gap behind the
+   display at |Y| ≈ 36 so its bottom hook straddles the bezel's top rear corner, then lay the top of
+   the strap over the shell's front rim until the C seats on it. There is nothing to click; lift it
+   straight out to remove. They come off before the bezel does.
 
 Cable:
 - **Outside power:** plug either USB-C port directly.
@@ -154,6 +210,29 @@ Final run after the independent fit review (`enclosure.py`, then `collar.py --ch
 
 Total: about 8 h 34 and 266 g of PETG.
 
+### Bib straps (2026-09-21, first version — not yet printed)
+Added without touching the three parts above: `overalls.py`, then `overalls.py --check-only`,
+`check_mesh.py`, `islands.py`, `islands.py --overhangs`, `bambu.py --only bib-straps --slice`.
+**Everything passes and the plate slices with no warnings and no supports.**
+
+| Part | Volume | Robot-frame extent (mm) | Checks |
+|---|---|---|---|
+| bib-strap-left | 2.07 cm³ | x 46.1…82.2, y 29.0…43.0, z 131.5…185.0 | watertight; no floating islands |
+| bib-strap-right | 2.07 cm³ | mirrored in y | identical — it is the left one mirrored, not a second build |
+
+- **Fit check: passed.** 0.000 mm³ against the bezel, the tray-cradle and the backstrap on both
+  sides, and 0.000 mm³ against the shell proxy below z 139.
+- **Against the body above the display**, measured point-to-triangle on Pollen's mesh: the run's
+  closest approach is **1.06 mm** (0 of 3,332 points inside the shell wall) and the rim hook's is
+  **0.57 mm** (0 of 1,211). The rim hook to anything above z 184 and inboard of X 46 is **6.88 mm**.
+- **Mesh check: passed.** All four STLs, 0 open edges, 100 % normals.
+- **Island scan: clean.** The overhang scan leaves 73–77 mm² over 45° and bridges of 4–7 mm where
+  the hook bights lie; the slicer takes them without support or warning.
+
+| Project | Time | PETG | Supports | Slicer warnings |
+|---|---|---|---|---|
+| `reachy-dungarees-bib-straps.3mf` | 28 min | 5.5 g | none | none |
+
 **2026-09-20, handover check.** `check_mesh.py` re-run against the exports exactly as they stand:
 all six STLs pass, 0 open edges, normals 100 % (backstrap 74.69 cm³, bezel 25.99, tray-cradle
 135.34). The printable results are now **committed** - `out/print/*.stl`, `out/bambu/*.3mf` and
@@ -171,3 +250,12 @@ re-sliced, and v0.5 still has never been printed.
 - **The optional camera module** isn't accommodated.
 - **Antennas:** by Pollen's sleep-pose drawing, the antennas pass about 14 mm outside the collar top. Check this on the robot.
 - **Reachy's USB-C output:** check it supplies enough current for the display before relying on it.
+- **Bib straps and the head.** The rim hook sits 6.88 mm from anything above the rim *in the URDF
+  zero pose*. The head moves on its Stewart platform and this has not been checked against a real
+  sweep. Watch it once with the straps on before leaving them there; if the head does come near,
+  `RIM_DN` and `RIM_SLOT` set how far the hook reaches inside the rim. The front rim is the highest
+  point of the body (z 184.8, against 139 at the sides), which is the reason to expect it is fine.
+- **Bib strap retention.** Nothing clicks: the strap hangs in the rim hook and is located by the
+  bezel hook, trapped in a 10–13 mm gap. If one rattles, deepen `BEZ_RET` or narrow `RIM_SLOT`.
+- **The straps assume the shell's real rim matches Pollen's mesh.** The slot is 4.5 mm over a rim
+  measured at ~2 mm for exactly that reason, but a much thicker rim would stop the hook seating.

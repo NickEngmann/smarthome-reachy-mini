@@ -199,7 +199,8 @@ def main():
     args = [a for a in sys.argv[1:] if not a.startswith("-")]
     layer = float(args[0]) if len(args) > 0 else 0.2
     g = float(args[1]) if len(args) > 1 else 0.2
-    parts = ("tray-cradle", "bezel", "backstrap")
+    parts = ("tray-cradle", "bezel", "backstrap", "bib-strap-left", "bib-strap-right")
+    parts = tuple(p for p in parts if os.path.exists(os.path.join(PRINT, "%s-%s-print.stl" % (PRE, p))))
     if "--overhangs" in sys.argv:
         for n in parts:
             overhangs(n, layer, g)
