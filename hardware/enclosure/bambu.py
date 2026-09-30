@@ -48,10 +48,33 @@ PROJECTS = [
     # another colour) without touching the three parts that are already on the robot. They lie with
     # their profile on the plate and their 14 mm width as the print Z, which makes each one a
     # near-prism - no overhang anywhere, so no support; a brim because the footprint is a 2.1 mm line.
+    #
+    # First-layer adhesion (2026-09-30). The first v3 print would not stay on the plate and the PETG
+    # built up on the nozzle - dried filament (6 % in the box), flow calibration and bed levelling on.
+    # A 284 mm2 footprint of thin perimeters gives a loose line nothing to hold it, and a dragged line
+    # ends up on the nozzle. So, for this plate only: the first layer slowed from 50 mm/s (105 for its
+    # infill) to 25, printed at 255 C instead of the preset's 245 (the same as every other layer), the
+    # textured plate at 80 C for the first layer and 75 after (preset 70), and an 8 mm brim (was 5).
     dict(name="reachy-dungarees-bib-straps", preset="Bambu PETG Basic @BBL X1C", colours=[DENIM],
-         process=dict(COMMON, brim_type="no_brim"),
-         rows=[[("bib-strap-left", 0.0, dict(BRIM)), ("bib-strap-right", 0.0, dict(BRIM))]]),
+         process=dict(COMMON, brim_type="no_brim", initial_layer_speed="25", initial_layer_infill_speed="25"),
+         filament=dict(nozzle_temperature_initial_layer="255", textured_plate_temp_initial_layer="80",
+                       textured_plate_temp="75"),
+         rows=[[("bib-strap-left", 0.0, dict(BRIM, brim_width="8")),
+                ("bib-strap-right", 0.0, dict(BRIM, brim_width="8"))]]),
 ]
+
+
+def filament_settings(ps, **kv):
+    """Filament values (temperatures) over the preset's, in every slot, recorded as changed in the
+    FILAMENT group of different_settings_to_system - B.process() records under the print group,
+    which is right for process keys only."""
+    for k, v in kv.items():
+        ps[k] = [str(v)] * len(ps[k]) if isinstance(ps.get(k), list) else str(v)
+    d = list(ps.get("different_settings_to_system") or [])
+    if len(d) >= 2:
+        d[1] = ";".join(sorted(set(filter(None, (d[1] + ";" + ";".join(kv)).split(";")))))
+        ps["different_settings_to_system"] = d
+    return ps
 
 
 def load_stl(name, rot_deg=0.0):
@@ -94,6 +117,7 @@ def build(p):
     ps = B.load_reference()
     ps = B.with_filament(ps, p["preset"], p["colours"][0])
     ps = B.process(ps, p["name"], **p["process"])
+    ps = filament_settings(ps, **p.get("filament", {}))
     rows = [[dict(name="%s-%s" % (PRE, n), parts=[dict(name="%s-%s" % (PRE, n), mesh=load_stl(n, rot), extruder=1)], settings=s)
              for n, rot, s in row] for row in p["rows"]]
     objs = B.layout(rows, ps)

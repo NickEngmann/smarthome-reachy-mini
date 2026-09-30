@@ -127,7 +127,7 @@ They change **nothing** about the three parts above - that was the owner's condi
 each existing part, 1.23 mm to the shell on the run, 0.66 mm at the rim hook, watertight, islands
 clean, and 39 min / 6.0 g with no slicer warning and no support.
 
-**2026-09-30: v3 is the one to keep.** v2 was printed and had to be hot-glued in: shoulders on the
+**2026-09-30: v3 is the one to keep - printed, fits, holds without glue (owner).** v2 was printed and had to be hot-glued in: shoulders on the
 rib tops and a short tongue *located* the strap, but nothing *held* it. v3 drops the shoulders, runs
 the tongue down the slot between the ribs at |Y| 25 and 50 (27.10..47.90) to just over the collar
 band's top edge, and adds a spring finger (outboard half, |Y| 37.5..47.5) down between the tray's
@@ -136,7 +136,7 @@ tray-cradle. `FINGER_PRELOAD` 0.8 (0.54..0.73 against the band's printed STL, wh
 to 0.28 inside the true surface), 1.27 mm peak bend of 1.60 going in. The strap is flush with the
 foot's OUTBOARD edge now (centred |Y| 40.5), because the finger only fits outboard and that edge
 goes on the plate. Checks: 0.000 mm3 everywhere with the nub removed, assembly path 1..50 mm clear,
-37 min / 8.8 g PETG, no slicer warning. Two check traps from this round:
+41 min / 9.1 g PETG with the adhesion settings (slower, hotter first layer, 8 mm brim; bambu.py), no slicer warning. Two check traps from this round:
 
 - **OCC can return an EMPTY boolean with no error.** `tray_cradle.intersect(box(..., -60, -18, 80,
   240))` gave 0.0 mm3 (the +Y mirror gave 13,953), so every right-side check passed against nothing.

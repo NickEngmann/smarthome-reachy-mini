@@ -114,7 +114,7 @@ The three projects are ready to open in Bambu Studio: `out/bambu/*.3mf`. Setting
 |---|---|---|
 | `reachy-dungarees-tray-cradle.3mf` | the tray-cradle upright, as it sits on the robot | 5 mm outer brim |
 | `reachy-dungarees-bezel-backstrap.3mf` | the bezel face down (textured PEI gives the bib a fabric-like finish), with the backstrap upright and turned 90° beside it | backstrap: 5 mm outer brim |
-| `reachy-dungarees-bib-straps.3mf` | both bib straps on their sides, profile flat on the plate and the Y width as the print Z (each turned so **its own** flush edge is down) | 5 mm outer brim each |
+| `reachy-dungarees-bib-straps.3mf` | both bib straps on their sides, profile flat on the plate and the Y width as the print Z (each turned so **its own** flush edge is down) | 8 mm outer brim each; first layer 25 mm/s at 255 °C, textured plate 80 °C for the first layer and 75 °C after (adhesion — see below) |
 
 `bambu.py --only <substring>` writes and slices just the projects whose name matches, so a change
 to one plate does not re-time the others.
@@ -124,6 +124,15 @@ Common process settings:
 - **Seam and ironing:** aligned seams, no ironing.
 - **Supports:** none anywhere.
 - **Elephant foot:** 0.15 mm compensation, so the engraving and the joint's sliding faces stay clean.
+- **Bib straps, first-layer adhesion (2026-09-30).** The first v3 print would not stay on the plate
+  and the PETG built up on the nozzle, with dry filament (6 % in the box), flow calibration and bed
+  levelling all on. Each strap stands on a 284 mm² footprint of thin perimeters, so a line that
+  does not bond gets dragged onto the nozzle. That plate alone now prints its first layer at
+  25 mm/s (was 50, and 105 for its infill) and 255 °C (the preset's 245 was the coldest layer of the
+  print), on a textured plate at 80 °C for the first layer and 75 °C after (preset 70), with an 8 mm
+  brim (was 5). Before changing anything, wash the plate with dish soap and water and brush the
+  nozzle clean while hot; if it still lifts, add a thin layer of glue stick. The straps have since been
+  printed and work (owner, 2026-09-30).
 
 Latest CLI slice (v0.5):
 
@@ -131,7 +140,7 @@ Latest CLI slice (v0.5):
 |---|---|---|---|---|
 | tray-cradle | 4 h 52 | 152 g | none | none |
 | bezel + backstrap | 3 h 42 | 114 g | none | none |
-| bib straps (both, v3) | 37 min | 8.8 g | none | none |
+| bib straps (both, v3) | 41 min | 9.1 g | none | none |
 
 **Colour:** a denim-blue PETG. With an AMS, add a height-range filament change on the upright parts for a brown cuff (z 0–4) and waistband (z 32–48 on the plate).
 
@@ -243,7 +252,7 @@ Final run after the independent fit review (`enclosure.py`, then `collar.py --ch
 
 Total: about 8 h 34 and 266 g of PETG.
 
-### Bib straps (2026-09-30, v3 — not yet printed; v2 was printed and needed hot glue)
+### Bib straps (2026-09-30, v3 — PRINTED and working, no glue (owner, 2026-09-30); v2 needed hot glue)
 Added without touching the three parts above: `overalls.py`, then `overalls.py --check-only`,
 `check_mesh.py`, `islands.py`, `islands.py --overhangs`, `bambu.py --only bib-straps --slice`.
 **Everything passes and the plate slices with no warnings and no supports.**
@@ -302,7 +311,7 @@ at all beneath them, and these had a sliver of contact. The slicer's own warning
 
 | Project | Time | PETG | Supports | Slicer warnings |
 |---|---|---|---|---|
-| `reachy-dungarees-bib-straps.3mf` (v3) | 37 min | 8.8 g | none | none |
+| `reachy-dungarees-bib-straps.3mf` (v3) | 41 min | 9.1 g | none | none |
 
 **2026-09-20, handover check.** `check_mesh.py` re-run against the exports exactly as they stand:
 all six STLs pass, 0 open edges, normals 100 % (backstrap 74.69 cm³, bezel 25.99, tray-cradle
@@ -326,7 +335,7 @@ re-sliced, and v0.5 still has never been printed.
   sweep. Watch it once with the straps on before leaving them there; if the head does come near,
   `RIM_DN` and `RIM_SLOT` set how far the hook reaches inside the rim. The front rim is the highest
   point of the body (z 184.8, against 139 at the sides), which is the reason to expect it is fine.
-- **Bib strap retention (v3).** v2 needed hot glue. v3 is held by the spring finger's friction, and
+- **Bib strap retention (v3).** Printed and holding without glue (owner, 2026-09-30). v3 is held by the spring finger's friction, and
   how much it presses is the one number printing can move: 0.80 mm as designed, 0.54–0.73 against
   the tray-cradle's printed mesh, before any print tolerance. If a strap still lifts out,
   raise `FINGER_PRELOAD` by 0.2. The check fails once the bend going in passes 1.4 of the finger's
