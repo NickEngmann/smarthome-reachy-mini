@@ -9,8 +9,8 @@ Two kinds of picture, because they answer different questions:
   * The 3-D views (render.py's painter: STL triangles in one Poly3DCollection, no GPU) say what it
     LOOKS like. They read the three existing enclosure STLs unchanged and add the strap pair.
   * The SECTIONS say how it fits. Every part is cut by a plane and drawn as filled outlines, so the
-    rim hook sitting on the shell's top edge, the 1.5 mm the run stands off the body and the foot's
-    shoulder bedding on a rib top are visible as geometry rather than as a claim. A 3-D render of a
+    rim hook sitting on the shell's top edge, the 1.5 mm the run stands off the body and the spring
+    finger's nub pressed into the collar band are visible as geometry rather than as a claim. A 3-D render of a
     2 mm strap against a curved shell cannot show a 1 mm gap; a section can.
 
 There is no tight 3-D close-up of either end, for a related reason: render.py depth-sorts a single
@@ -32,16 +32,23 @@ import overalls as O
 OUT = os.path.join(HERE, "out")
 RDIR = os.path.join(OUT, "render")
 STRAP = (0.30, 0.46, 0.70)          # a shade lighter than the denim, so the strap reads against the shell
+CUT_STRAP = (0.93, 0.55, 0.20)       # the cutaways: orange, as in the sections, so it stands out from the cradle
 
-# Two cuts, because the foot is not the same shape all the way across. THROUGH_TONGUE runs down the
-# strap's own centre and catches the tongue; THROUGH_SHOULDER is out on a shoulder, where the foot
-# stops on a rib top - that one is the mount, and it is invisible in the other.
-# Both are nudged 0.37 mm off a whole millimetre: the loft's slices sit on whole millimetres, so a
+# Three cuts, because the foot is not the same shape all the way across. THROUGH_STRAP runs down the
+# strap's own centre, rim hook to finger tip. THROUGH_FINGER is a closer look at the spring, where
+# the nub is well into the band slot. THROUGH_TONGUE is inboard of the finger, where the tongue
+# alone rests on the collar band's top edge.
+# All are nudged 0.37 mm off a whole millimetre: the loft's slices sit on whole millimetres, so a
 # cut exactly on one runs along a ring of shared edges, every edge comes back twice (once per
 # adjoining triangle) and the section falls apart into dozens of two-segment scraps.
-THROUGH_TONGUE = O.STRAP_C + 0.37
-THROUGH_SHOULDER = O.STRAP_Y - O.FOOT_W / 2 - O.SHOULDER_W / 2 + 0.37     # 26.37, over the Y 25 rib
-SECTION_Y = THROUGH_TONGUE
+THROUGH_STRAP = O.STRAP_C + 0.37                                          # 40.87
+THROUGH_FINGER = O.STRAP_C + 2.37                                         # 42.87
+THROUGH_TONGUE = O.STRAP_Y - O.FOOT_W / 2 + 3.37                          # 30.87, inboard of the finger
+SECTION_Y = THROUGH_STRAP
+# From `overalls.py --check-only` (2026-09-30, v3). Titles quote them; re-run the check and update
+# these when the geometry changes.
+RIM_GAP = "0.64 mm"
+MEASURED = "Measured: 0.81 mm from the run to the shell,\n%s at the rim hook, and the nub presses 0.54-0.80 mm into the band once seated." % RIM_GAP
 
 
 def load(name):
@@ -128,6 +135,7 @@ def draw_section(parts, name, title, xlim=None, zlim=None, notes=(), figsize=(13
     for (x, z), (tx, tz), text in notes:
         ax.annotate(text, xy=(x, z), xytext=(tx, tz), fontsize=10, zorder=5,
                     ha="left" if tx > x else "right", va="center",
+                    bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="none", alpha=0.9),
                     arrowprops=dict(arrowstyle="-", lw=0.9, color="0.25",
                                     connectionstyle="arc3,rad=0.12"))
     ax.set_aspect("equal")
@@ -159,51 +167,81 @@ def sections():
              (raw("backstrap"), (0.26, 0.40, 0.62), (0.13, 0.22, 0.38), "backstrap"),
              (raw("bezel"), (0.19, 0.30, 0.48), (0.09, 0.16, 0.28), "bezel"),
              (raw("%s-left" % O.NAME), (0.93, 0.55, 0.20), (0.55, 0.30, 0.06), "bib strap")]
-    yt, ysh = THROUGH_TONGUE, THROUGH_SHOULDER
-    xr, zr = O.rim(yt)
-    rib = O.bp(-2.0, O.FOOT_DZ_RIB)                                   # on the ribs' top plane
-    tongue = O.bp(-3.0, O.FOOT_DZ_RIB - O.TONGUE_DROP + 1.0)
+    ys, yf, yt = THROUGH_STRAP, THROUGH_FINGER, THROUGH_TONGUE
+    xr, zr = O.rim(ys)
+    ff = lambda z: O.back_x(z) - O.FINGER_G - O.FINGER_T / 2              # the finger blade's mid-line
+    tongue = lambda y: (O.back_x(132.0) - O.FOOT_G - 2.0, 132.0)
+    nub = lambda y: (O._nub(y)[0] + 0.3, O.NUB_Z)
 
     draw_section(
         parts, "overalls-section",
-        "Bib strap in section, cut down the strap's centre (robot Y = %.1f) - one closed loop, so it runs\n"
-        "unbroken from the rim hook to the foot. Measured: 1.23 mm from the run to the shell, 0.66 mm at the\n"
-        "rim hook, 0.40 mm off the panel's back." % yt,
-        xlim=(18, 118), zlim=(26, 196), y=yt,
+        "Bib strap in section, down the strap's centre (robot Y = %.1f): one closed loop from the rim hook\n"
+        "over the robot's shoulder to the spring finger down behind the panel. %s" % (ys, MEASURED),
+        xlim=(18, 118), zlim=(26, 196), y=ys,
         notes=[((xr, zr), (xr - 34, zr + 6), "rim hook: a 4.5 mm slot\nover a ~2 mm rim"),
-               ((O.shell_x(yt, 160) + 2.6, 160.0), (30, 158), "shell run:\n1.5 mm off the body"),
-               ((70.0, 148.0), (34, 134), "gap run: leans forward\ninto the gap behind the panel"),
-               (tongue, (102, 118), "the foot's TONGUE, in the slot\nbetween two of the cradle's ribs"),
-               ((90.0, 100.0), (112, 92), "the bib's face is untouched")])
+               ((O.shell_x(ys, 160) + 2.6, 160.0), (30, 158), "shell run:\n1.5 mm off the body"),
+               ((70.0, 148.0), (34, 136), "gap run: leans forward\ninto the gap behind the panel"),
+               (tongue(ys), (102, 132), "TONGUE: fills the slot\nbetween two cradle ribs"),
+               ((ff(100.0), 100.0), (34, 100), "spring FINGER, down into\nthe collar band's slot"),
+               ((90.0, 80.0), (112, 72), "the bib's face is untouched")])
 
     draw_section(
         parts, "overalls-section-rim",
-        "Rim hook: the C drops over the shell's top edge - 0.66 mm measured at the closest point",
-        xlim=(38, 72), zlim=(162, 192), figsize=(11, 10), y=yt,
+        "Rim hook: the C drops over the shell's top edge - %s measured at the closest point" % RIM_GAP,
+        xlim=(38, 72), zlim=(162, 192), figsize=(11, 10), y=ys,
         notes=[((xr, zr), (xr - 14, zr + 7), "the shell's own rim"),
                ((xr - 4.0, zr - 2.0), (xr - 15, zr - 7), "reaches 3 mm\ndown inside"),
-               ((O.shell_x(yt, 168) + 2.6, 168.0), (66, 166), "1.5 mm\noff the shell")])
+               ((O.shell_x(ys, 168) + 2.6, 168.0), (66, 166), "1.5 mm\noff the shell")])
 
     draw_section(
         parts, "overalls-section-foot",
-        "The foot through the TONGUE (Y = %.1f): it hangs into the slot between the ribs, 0.40 mm off the\n"
-        "panel's back, and stops short of the collar band - the ribs carry the strap, not the band." % yt,
-        xlim=(56, 92), zlim=(116, 150), figsize=(12, 10), y=yt,
-        notes=[(tongue, (59, 122), "tongue, in the slot"),
-               ((O.back_x(134.0) - 0.2, 134.0), (86, 127), "0.40 mm off the\npanel's back face"),
-               ((69.5, 124.5), (61, 145), "the collar band's top edge:\ndeliberately NOT touched")])
+        "The foot through the spring FINGER (Y = %.1f). Its nub is modelled %.1f mm into the collar band: the\n"
+        "strap moves %.2f forward onto the tray's back wall and the rest bends the finger - so the strap is\n"
+        "clamped between two faces of the tray-cradle. The overlap you see IS the preload." % (
+            yf, O.FINGER_PRELOAD + O.FOOT_G, O.FOOT_G),
+        xlim=(44, 110), zlim=(86, 146), figsize=(12, 11), y=yf,
+        notes=[(tongue(yf), (95, 128), "tongue, %.2f mm off\nthe tray's back wall" % O.FOOT_G),
+               ((ff(112.0), 112.0), (95, 114), "finger: %.2f thick, %.1f mm\nclear of the wall to bend into"
+                % (O.FINGER_T, O.FINGER_G)),
+               (nub(yf), (48, 96), "nub, pressing\nthe collar band"),
+               ((O.back_x(94.0) - 1.0, 93.0), (95, 95), "45 deg lead-in on the tip\nand under the nub")])
 
     draw_section(
-        parts, "overalls-section-shoulder",
-        "The mount, through a SHOULDER (Y = %.1f, over the rib at Y 25): it beds on the rib's own top edge.\n"
-        "The tongue is not in this plane - it is inboard, hanging in the slot." % ysh,
-        xlim=(56, 92), zlim=(116, 150), figsize=(12, 10), y=ysh,
-        notes=[(rib, (59, 127), "shoulder resting on\nthe rib's top edge"),
-               ((O.back_x(136.0) - 0.2, 136.0), (86, 126), "0.40 mm off the\npanel's back face"),
-               ((O.shell_x(ysh, 130) + 1.0, 130.0), (61, 145), "the shell, behind")])
+        parts, "overalls-section-tongue",
+        "Inboard of the finger (Y = %.1f) there is no room for a spring - the band comes within ~1.4 mm of the\n"
+        "tray's back wall - so the tongue stops %.1f mm above the band's top edge and cannot drop past it."
+        % (yt, O.TONGUE_BOT - O.BAND_TOP),
+        xlim=(44, 110), zlim=(100, 146), figsize=(12, 10), y=yt,
+        notes=[(tongue(yt), (95, 128), "tongue, in the slot\nbetween the ribs"),
+               ((O.back_x(O.TONGUE_BOT) - 3.0, O.TONGUE_BOT), (48, 132), "its flat bottom, just\nover the band's top edge"),
+               ((O.back_x(112.0) - 3.0, 112.0), (48, 106), "the collar band")])
 
 
 # --------------------------------------------------------------------------------- 3-D views
+def cutaway(reachy, base, strap, y=THROUGH_FINGER):
+    """The robot's left side with everything nearer than the plane Y = y taken away, so the foot
+    shows in 3-D: from outside, the collar band hides it completely. Triangles are kept by centroid,
+    so they are split small first (1.5 mm) to keep the cut edge clean; only the region around the
+    strap is split, or the body alone would run to millions."""
+    box = ((30.0, 112.0), (-10.0, y), (84.0, 196.0))
+
+    def clip(T):
+        c = T.mean(axis=1)
+        m = ((c[:, 0] > box[0][0] - 10) & (c[:, 0] < box[0][1] + 10) & (c[:, 1] > box[1][0] - 10)
+             & (c[:, 1] < y + 10) & (c[:, 2] > box[2][0] - 10) & (c[:, 2] < box[2][1] + 10))
+        return R.subdivide(T[m], maxedge=1.5)
+
+    lift = 18.0 * np.array([-O.D_BACK[0], 0.0, -O.D_BACK[1]])
+    common = [(clip(reachy.reshape(-1, 3, 3)), R.REACHY), (clip(R.board_in_robot().reshape(-1, 3, 3)), R.BOARD),
+              (clip(base["tray-cradle"]), R.DENIM), (clip(base["bezel"]), R.DENIM_DARK)]
+    R.draw(common + [(clip(strap), CUT_STRAP)], "overalls-cutaway", 14, 70,
+           "cut away at robot Y %.1f, seen from the robot's left: tongue behind the tray's back wall, finger's nub\n"
+           "pressing the collar band (strap in orange)" % y, lims=box, zoom=1.0, light=(0.3, 0.9, 0.4))
+    R.draw(common + [(clip(strap + lift), CUT_STRAP)], "overalls-cutaway-lifted", 14, 70,
+           "the same cut, strap 18 mm up: it slides down along the tray's back wall, and the nub rides over the band's top edge",
+           lims=box, zoom=1.0, light=(0.3, 0.9, 0.4))
+
+
 def views():
     reachy = R.load_stl(os.path.join(R.REPO, "cad", "reachy-mini", "reachy_mini_body.stl"))
     base = {n: load(n) for n in ("bezel", "tray-cradle", "backstrap")}
@@ -219,8 +257,9 @@ def views():
            lims=((30.0, 110.0), (18.0, 60.0), (118.0, 190.0)), zoom=1.0, light=(0.25, 0.85, 0.4))
     lift = [(reachy, R.REACHY), (R.board_in_robot(), R.BOARD), (base["tray-cradle"], R.DENIM),
             (base["backstrap"], R.DENIM), (base["bezel"], R.DENIM_DARK),
-            (straps[0] + np.array([14.0, 0.0, 26.0]), STRAP), (straps[1], STRAP)]
-    R.draw(lift, "overalls-fitting", 14, 40, "fitting: the left strap lifted out along the way it drops in")
+            (straps[0] + 32.0 * np.array([-O.D_BACK[0], 0.0, -O.D_BACK[1]]), STRAP), (straps[1], STRAP)]
+    R.draw(lift, "overalls-fitting", 14, 40, "fitting: the left strap lifted 32 mm out, along the panel's back face")
+    cutaway(reachy, base, straps[0])
     for s in ("left", "right"):
         T = R.subdivide(R.load_stl(os.path.join(OUT, "print", "%s-%s-%s-print.stl" % (R.PRE, O.NAME, s))))
         R.draw([(T, STRAP)], "print-%s-%s" % (O.NAME, s), 32, -60, "bib strap %s - as printed (on the bed)" % s)

@@ -127,13 +127,28 @@ They change **nothing** about the three parts above - that was the owner's condi
 each existing part, 1.23 mm to the shell on the run, 0.66 mm at the rim hook, watertight, islands
 clean, and 39 min / 6.0 g with no slicer warning and no support.
 
-**v2 is the one to keep.** v1 hooked over the bezel's top rear corner; v2's foot uses a pocket the
-cradle already had - the slot between the ribs at |Y| 25 and 50 (27.10..47.90, 20.80 wide) with
-their tops as a bearing plane at board z 53.6. Two shoulders bed on the rib tops, a tongue hangs
-in the slot, the panel's back and the shell take it fore-and-aft. Nothing was added to the cradle.
-The collar band's top edge looked like the obvious ledge and is not: it sweeps 6.6 mm in X across
-the pocket as it follows the shell, so a flat foot would bear on ~1 mm at one end and miss at the
-other. Five things this cost, worth not rediscovering:
+**2026-09-30: v3 is the one to keep.** v2 was printed and had to be hot-glued in: shoulders on the
+rib tops and a short tongue *located* the strap, but nothing *held* it. v3 drops the shoulders, runs
+the tongue down the slot between the ribs at |Y| 25 and 50 (27.10..47.90) to just over the collar
+band's top edge, and adds a spring finger (outboard half, |Y| 37.5..47.5) down between the tray's
+back wall and the band, whose nub presses the band - the strap is clamped between two faces of the
+tray-cradle. `FINGER_PRELOAD` 0.8 (0.54..0.73 against the band's printed STL, whose chords sit up
+to 0.28 inside the true surface), 1.27 mm peak bend of 1.60 going in. The strap is flush with the
+foot's OUTBOARD edge now (centred |Y| 40.5), because the finger only fits outboard and that edge
+goes on the plate. Checks: 0.000 mm3 everywhere with the nub removed, assembly path 1..50 mm clear,
+37 min / 8.8 g PETG, no slicer warning. Two check traps from this round:
+
+- **OCC can return an EMPTY boolean with no error.** `tray_cradle.intersect(box(..., -60, -18, 80,
+  240))` gave 0.0 mm3 (the +Y mirror gave 13,953), so every right-side check passed against nothing.
+  `check()` now uses off-grid clip bounds and fails if a clip is empty, and it asserts the nub IS
+  into the band on both sides - a positive control. Any "0.000" deserves one.
+- **`islands.py` can report a bridge that is not there** when a layer plane lands exactly on a loft
+  station (whole-mm Y here): the section drops segments. Slice at +-0.01 to confirm.
+
+v2's notes, still true where they apply: the collar band's top edge sweeps 6.6 mm in X across the
+pocket as it follows the shell, so a flat foot bears on it only where it happens to meet it (v3's
+tongue rests on it inboard only, and the finger follows it per slice). Five things v2 cost, worth
+not rediscovering:
 
 - **In the print, robot Y is UP.** The part is a prism extruded along Y, so an overhang has to be
   judged in that frame and the intuition inverts. A tongue side dropping 10 mm over 1.5 mm of Y

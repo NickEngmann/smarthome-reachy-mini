@@ -29,7 +29,7 @@ After a build, everything below `enclosure.py` reads only its exports, so the ch
 | **bezel** | face down | Window over the active area. A full-depth top wall holds the **microSD slot**. A snap lip hangs from a shelf on the plate on three sides, with 45° bumps on the two ends. Oval bosses hold the board down, with slot sockets for the tray's locating pegs. | Dashed stitch round the bib, two bib buttons above the screen, and a heart below it. All are engraved, because a face-down print can't have raised detail. |
 | **tray-cradle** | upright | The tray has **2× USB-C openings** sized for a plug's overmold and a **switch slot** on one end. The floor has **BOOT/RESET pin holes** plus LED and mic holes. Four standoffs carry **locating pegs** through the board's M3 holes, and relief channels above the USB-C windows let the connectors slide down past the wall. Behind the tray, ribs bear on the belly and the front half of the waistband ends in a side-joint strip. | A strap, buckle and engraved button on each end of the bib, a stitched waistband, belt loops and a rolled cuff. |
 | **backstrap** | upright | The rest of the collar. At each side, a tongue carries two flex tabs whose hooks click into windows in the strip. Three **spring tabs** preload the collar, and a **cable gutter** runs along the bottom. | Crossed back straps with edge stitching and teardrop buttons, two back pockets, a waistband with belt loops, and side buttons. The gutter doubles as the cuff. |
-| **bib-strap ×2** | on its side | **Optional, cosmetic.** Hangs over the robot's own front rim, runs down the outside of the shell, and drops into the gap behind the display, where a foot sits in the pocket between two of the cradle's ribs. The other three parts are untouched. | The two shoulder straps of the dungarees, 14 × 2.1 mm with edge stitching, completing the crossed straps already moulded on the backstrap. |
+| **bib-strap ×2** | on its side | **Optional, cosmetic.** Hangs over the robot's own front rim, runs down the outside of the shell, and drops into the gap behind the display, where a foot fills the pocket between two of the cradle's ribs and a spring finger clamps it in place. The other three parts are untouched. | The two shoulder straps of the dungarees, 14 × 2.1 mm with edge stitching, completing the crossed straps already moulded on the backstrap. |
 
 ## Bib straps
 
@@ -48,35 +48,50 @@ python render_overalls.py --section  # just the sections (seconds: no 3-D painti
 
 `overalls-section*.png` are the pictures that actually show the fit: every part cut by a plane just
 off the strap's centre and drawn filled, so the rim hook on the shell's top edge, the 1.5 mm the run
-stands off the body and the foot in its pocket are geometry rather than a claim. A 3-D render of a 2 mm strap against a curved shell cannot show a 1 mm gap. There is no tight
+stands off the body and the spring finger's nub pressed into the collar band are geometry rather
+than a claim. A 3-D render of a 2 mm strap against a curved shell cannot show a 1 mm gap. There is no tight
 3-D close-up of either hook for the same reason: `render.py` depth-sorts one collection by centroid,
 which breaks down at close range on the shell's coarse triangles.
 
-Each strap is four lofted pieces unioned, sliced every 1 mm so each slice follows the body at its
-own Y. Its weight goes into the cradle's two rib tops through the foot's shoulders; the rim hook
-only keeps the top against the shell, and nothing has to grip anything.
+Each strap is five lofted pieces unioned, sliced every 1 mm so each slice follows the body at its
+own Y.
 
 | Piece | What it does |
 |---|---|
 | rim hook | A loose C over the shell's top edge: a 4.5 mm slot over a ~2 mm rim, reaching 3 mm down inside. Deliberately loose — a tight slot on a rim known only from CAD is a reprint, and the foot is what holds the strap. |
 | shell run | Inner face at `SHELL_CLR` (1.5 mm) off the body's front, from z 150 up to the rim. |
 | gap run | Leaves the shell at z 152 and leans forward into the gap behind the panel. |
-| **foot** | Two **shoulders** resting on the cradle's own **rib tops**, and a **tongue** hanging into the slot between those ribs. This is the mount — see below. |
+| **tongue** | Fills the slot between two of the cradle's ribs (20.0 in 20.80), 0.40 off the tray's back wall, down to 0.4 mm above the collar band's top edge (Z 124.4). Locates the strap side to side and stops it dropping. |
+| **spring finger** | Outboard half only (|Y| 37.5…47.5). A 1.68 mm blade on down the tray's back wall into the slot between the wall and the collar band, to Z 92, with a nub at Z 104 pressing the band. This is what **holds** the strap. |
+
+**v3 (2026-09-30): why the finger.** v2 was printed, and the owner had to hot-glue it in. Its two
+shoulders sat on the rib tops and a short tongue hung in the slot — that *located* the strap but
+nothing *held* it: there is no downward-facing ledge in the pocket to hook under, and a 3 g strap
+on a turning robot walks out. The owner's sketch ran the foot on down behind the panel; v3 does that
+and adds a spring, because depth alone still would not hold anything. The nub is modelled 1.2 mm
+into the band: the strap first moves 0.40 forward until the tongue bears on the tray's back wall,
+and the other 0.8 bends the finger. So the strap is **clamped between two faces of the tray-cradle
+itself** and holds by friction. In this print orientation the finger bends along its layers, not
+across them — the strong way for a printed spring.
 
 **Where it can go, and why** (robot frame, all measured):
 
 - **The mount is a pocket that was already there.** The ribs at |Y| 25 and 50 (4.2 thick) leave a
-  slot **27.10…47.90**, 20.80 wide, and their tops are a flat plane at board z 53.6 — robot Z 137.86
-  at the panel's back face, sloping to 137.0 eight mm behind it. The gap between the shell and the
-  panel's back there is **9.6–10.9 mm** over Z 118…140. So: the shoulders bed on the rib tops, the
-  tongue drops into the slot, and the panel's back and the shell take it fore-and-aft. Nothing was
-  added to the cradle, and nothing about it changed.
-- **The tongue stops 6 mm down, clear of the collar.** Resting on the collar band was the first
-  idea and it is wrong: the band's top edge sweeps 6.6 mm in X across the pocket as it follows the
-  shell (X 72.05…75.11 at Y 28.5, but 65.21…68.46 at Y 46.5), so a flat-bottomed foot would have
-  borne on about a millimetre of it at one end and missed it entirely at the other.
-- **The strap is flush with the foot's inboard edge**, centred on |Y| 31.5 rather than 37.5. That is
-  a printing constraint, not a styling one — see "Printing" below.
+  slot **27.10…47.90**, 20.80 wide. Behind the tray's back wall, between those ribs, the free depth
+  is 6.7 mm (inboard) to 15.7 mm (outboard) above Z 124, where the shell is what is behind it. Below
+  Z 124 the collar band comes in: **1.3 mm** deep inboard, **8.8** outboard, and waisted, narrowest at
+  about Z 108. Nothing was added to the cradle, and nothing about it changed.
+- **Only the outboard half takes a spring.** Inboard of |Y| 37.5 the waist is under 3.95 mm, and the
+  finger needs 3.28 (1.6 to bend into plus 1.68 of blade). There the tongue alone stops on the
+  band's top edge.
+- **The band is our own part, so it is exact.** `overalls.band_x` sections the same proxy
+  `collar.band()` is made from; it agrees with an exact section of the exported STEP to 0.000 mm.
+  The exported *STL* — which is what the slicer prints — sits up to **0.28 mm** inside it at the nub
+  (collar.py's STL export uses cadquery's default relative tolerance, so its chords are coarse). The
+  preload was raised from 0.6 to 0.8 for exactly that, and the check reports both.
+- **The strap is flush with the foot's OUTBOARD edge**, centred on |Y| 40.5 (v2: inboard, 31.5).
+  The finger only fits outboard, and in the print the outboard edge is the one on the plate — see
+  "Print checks" below.
 - **The microSD is not a constraint here.** It opens through the bezel's top wall at |Y| 62…76, well
   outboard of the strap. It *was* the constraint for the rejected front-clip version.
 - **Head clearance.** Above the front rim the whole robot stays inside X 41.5…43.2 (full mesh,
@@ -116,7 +131,7 @@ Latest CLI slice (v0.5):
 |---|---|---|---|---|
 | tray-cradle | 4 h 52 | 152 g | none | none |
 | bezel + backstrap | 3 h 42 | 114 g | none | none |
-| bib straps (both) | 39 min | 6.0 g | none | none |
+| bib straps (both, v3) | 37 min | 8.8 g | none | none |
 
 **Colour:** a denim-blue PETG. With an AMS, add a height-range filament change on the upright parts for a brown cuff (z 0–4) and waistband (z 32–48 on the plate).
 
@@ -191,11 +206,12 @@ Every fit is one of these classes (`geom.py`). Walls are whole line widths (`lin
 3. Put the tray-cradle against Reachy's belly. The front half of the waistband slides on from the front.
 4. Slide the backstrap on from behind. The spring nubs drag on the shell, and the four joint tabs click into their windows.
 5. To take it off, lift the four tabs by their pull lips (1 mm is enough) and slide the backstrap back.
-6. **Bib straps, if you printed them.** Last, and by hand. Lower each one into the gap behind the
-   display so its foot drops into the slot between the ribs — the wedge finds the slot on its own —
-   until the two shoulders bed on the rib tops. Then lay the top of the strap over the shell's front
-   rim until the C seats on it. There is nothing to click; lift it straight out to remove. They come
-   off before the bezel does.
+6. **Bib straps, if you printed them.** Last, and by hand. Slide each one down the back of the
+   tray, finger first, into the slot between the ribs — the chamfers find the slot — and keep
+   pushing down along the tray's back wall. The nub rides over the collar band's top edge (the finger
+   bends about 1.3 mm) and the strap stops when the tongue reaches the band. The rim hook drops over
+   the shell's front rim on the way down. To remove, pull it straight up along the tray's back wall.
+   They come off before the bezel does.
 
 Cable:
 - **Outside power:** plug either USB-C port directly.
@@ -227,30 +243,49 @@ Final run after the independent fit review (`enclosure.py`, then `collar.py --ch
 
 Total: about 8 h 34 and 266 g of PETG.
 
-### Bib straps (2026-09-21, v2 — not yet printed)
+### Bib straps (2026-09-30, v3 — not yet printed; v2 was printed and needed hot glue)
 Added without touching the three parts above: `overalls.py`, then `overalls.py --check-only`,
 `check_mesh.py`, `islands.py`, `islands.py --overhangs`, `bambu.py --only bib-straps --slice`.
 **Everything passes and the plate slices with no warnings and no supports.**
 
 | Part | Volume | Robot-frame extent (mm) | Checks |
 |---|---|---|---|
-| bib-strap-left | 2.49 cm³ | x 47.9…75.0, y 24.5…50.5, z 131.4…186.0 | watertight; no floating islands |
-| bib-strap-right | 2.49 cm³ | mirrored in y | identical — it is the left one mirrored, not a second build |
+| bib-strap-left | 4.01 cm³ | x 44.2…78.1, y 27.5…47.5, z 92.0…183.7 | watertight; no floating islands |
+| bib-strap-right | 4.01 cm³ | mirrored in y | identical — it is the left one mirrored, not a second build |
 
-- **Fit check: passed.** 0.000 mm³ against the bezel, the tray-cradle and the backstrap on both
-  sides, and 0.000 mm³ against the shell proxy below z 139.
+- **Fit check: passed**, with the nub (the intended preload) taken off first: 0.000 mm³ against
+  the bezel, the tray-cradle and the backstrap on both sides, and 0.000 mm³ against the shell proxy
+  below z 139. The nub itself is **33.92 mm³** into the collar band on each side.
+- **The spring**, per 1 mm slice across the finger: presses **0.80 mm** once seated against the
+  band as designed, **0.54–0.73 mm** against the band as printed (its STL). Going in, the finger bends
+  at most **1.27 mm** of the 1.60 it has, ~0.58 % strain at the root (1.68 thick, 23.4 mm lever;
+  PETG's stiffness is an estimate).
+- **Assembly path: passed.** The strap, nub off, moved 1–50 mm out along the tray's back wall:
+  0.000 mm³ against every part and 0 points inside the shell wall at every step, both sides.
 - **Against the body above the display**, measured point-to-triangle on Pollen's mesh: the run's
-  closest approach is **1.23 mm** (0 of 3,141 points inside the shell wall) and the rim hook's is
-  **0.66 mm** (0 of 1,395). The rim hook to anything above z 184 and inboard of X 46 is **7.52 mm**.
-- **Mesh check: passed.** All four STLs, 0 open edges, 100 % normals.
-- **Island scan: clean**, and 91 mm² over 45° with 135 mm² on the plate. Getting there took two
-  fixes the slicer found and CAD did not — see "Print checks" below.
-- **Section through the strap: one closed loop**, so it is continuous from the rim hook to the foot
-  — `out/render/overalls-section.png`, with the rim hook and the foot enlarged beside it.
+  closest approach is **0.81 mm** (0 of 3,616 points inside the shell wall) and the rim hook's is
+  **0.64 mm** (0 of 924). The rim hook to anything above z 184 and inboard of X 46 is **7.52 mm**.
+  (The run is closer than v2's 1.23 because the strap moved 9 mm outboard; its floor is 0.20.)
+- **Mesh check: passed.** All four strap STLs, 0 open edges, 100 % normals.
+- **Island scan: clean.** 57 mm² over 45° and 284 mm² on the plate per strap. `islands.py
+  --overhangs` lists one 21.7 mm² "bridge" per strap at print z 9.7, and it is the checker's own
+  artefact: layer 9.5 lies exactly on a loft station (|Y| 38.0), where the section drops part of
+  the gap run (6,011 raster cells there, ~6,585 at 9.49 and 9.51), so the next layer looks unsupported.
+  Bambu's slice has no warning.
+- **Sections**: `overalls-section.png` (rim hook to finger tip, one closed loop),
+  `overalls-section-foot.png` (the finger and its nub in the band), `overalls-section-tongue.png`
+  (inboard, the tongue over the band's top edge), and `overalls-cutaway*.png` in 3-D.
+
+**Two check bugs found on the way, worth not repeating.** The right side's cradle clip came back
+from OCC *empty* for whole-number bounds (0.0 mm³ against 13,953 on the left), with no error, so the
+right strap "passed" against nothing; the clip is off-grid now and the check fails if a clip is
+empty. And a nub-removal tool traced along the nub's own ramps left slivers of both ramps behind,
+read as 0.72 mm³ of interference; the tool is now a generous block behind the blade.
 
 **Print checks and what they changed (bib straps).** The part prints as a prism extruded along
-robot Y, so **robot Y is the print's vertical** — which inverts the intuition about overhangs, and
-cost two rounds:
+robot Y, so **robot Y is the print's vertical** — which inverts the intuition about overhangs. v2
+cost two rounds, and v3 kept the lesson (strap, tongue and finger are all flush with the OUTBOARD
+edge, which goes on the plate, and the part only loses material going up):
 
 - **The foot is 26 mm wide and the strap 14.** Centred, the strap's whole outline — the run and
   the rim hook, 50 mm of it — began 6 mm above the plate with nothing under it: "floating
@@ -267,7 +302,7 @@ at all beneath them, and these had a sliver of contact. The slicer's own warning
 
 | Project | Time | PETG | Supports | Slicer warnings |
 |---|---|---|---|---|
-| `reachy-dungarees-bib-straps.3mf` | 39 min | 6.0 g | none | none |
+| `reachy-dungarees-bib-straps.3mf` (v3) | 37 min | 8.8 g | none | none |
 
 **2026-09-20, handover check.** `check_mesh.py` re-run against the exports exactly as they stand:
 all six STLs pass, 0 open edges, normals 100 % (backstrap 74.69 cm³, bezel 25.99, tray-cradle
@@ -291,9 +326,12 @@ re-sliced, and v0.5 still has never been printed.
   sweep. Watch it once with the straps on before leaving them there; if the head does come near,
   `RIM_DN` and `RIM_SLOT` set how far the hook reaches inside the rim. The front rim is the highest
   point of the body (z 184.8, against 139 at the sides), which is the reason to expect it is fine.
-- **Bib strap retention.** Nothing clicks: the foot's shoulders sit on the rib tops and its tongue
-  fills the slot between them, with the rim hook keeping the top against the shell. If one rattles,
-  raise `FOOT_D` (the tongue is currently 5.5 mm deep, auto-clamped against the shell) or narrow
-  `RIM_SLOT`. If a foot will not drop in, `FOOT_W` (20.0 in a 20.80 slot) is the number to shave.
+- **Bib strap retention (v3).** v2 needed hot glue. v3 is held by the spring finger's friction, and
+  how much it presses is the one number printing can move: 0.80 mm as designed, 0.54–0.73 against
+  the tray-cradle's printed mesh, before any print tolerance. If a strap still lifts out,
+  raise `FINGER_PRELOAD` by 0.2. The check fails once the bend going in passes 1.4 of the finger's
+  1.6 mm of room. If a strap is too hard to push home, lower it by 0.2. If a foot will not
+  enter the slot, `FOOT_W` (20.0 in a 20.80 slot) is the number to shave. PETG's stiffness here
+  (~2 GPa) is an estimate, not a datasheet figure.
 - **The straps assume the shell's real rim matches Pollen's mesh.** The slot is 4.5 mm over a rim
   measured at ~2 mm for exactly that reason, but a much thicker rim would stop the hook seating.

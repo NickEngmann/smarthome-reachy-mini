@@ -18,8 +18,11 @@ panel, which is what a real pair of dungarees does.
                 sampled per slice across the strap's width, so it stays parallel to a shell that
                 falls away 4 mm across those 14 mm.
   gap run       leaves the shell at z 152 and leans forward into the 10-13 mm gap behind the panel.
-  foot (v2)     two shoulders resting on the cradle's own rib tops, and a tongue hanging into the
-                slot between those ribs. See FOOT_* below - this is the mount.
+  foot (v3)     a tongue filling the slot between the cradle's ribs, down the panel's back to the
+                collar band's top edge, and a spring finger on down into the band slot whose nub
+                presses the band - clamping the strap against the panel's back. See FOOT_* below.
+                v2 (shoulders on the rib tops, a short tongue) located the strap but did not hold
+                it: the printed pair needed hot glue.
 
 v1 hooked over the bezel's top rear corner instead: a leg down the back face and a return along
 the top surface. It worked, but it hung on one edge and put a tab on the panel's top surface. The
@@ -27,9 +30,9 @@ pocket between the ribs is a better anchor because it is a pocket - it locates t
 three directions at once, and it was already there.
 
 WHERE IT CAN GO, and why (measured, robot frame R; see README "Bib straps"):
-  * The part spans |Y| 24.5..50.5. The FOOT is centred on 37.5, the centre of the slot between
-    the ribs at 25 and 50; the STRAP is 14 wide and flush with the foot's inboard edge, centred
-    on 31.5, for the printing reason at STRAP_C below.
+  * The part spans |Y| 27.5..47.5. The FOOT is centred on 37.5, the centre of the slot between
+    the ribs at 25 and 50; the STRAP is 14 wide and flush with the foot's OUTBOARD edge, centred
+    on 40.5, for the printing reason at STRAP_C below.
   * The microSD slot is not a constraint here: it opens through the bezel's top wall at board
     x 62..76 (robot |Y| 62..76), well outboard of the strap.
   * HEAD CLEARANCE. Above the front rim the whole robot stays inside robot X 41.5..43.2 (full
@@ -82,40 +85,64 @@ RIM_LAP = 8.0                  # how far down the shell the hook's outer leg rea
 
 SEAM = 0.10                    # how far one lofted piece sits inside the next where they overlap
 
-# The FOOT (v2), which is the whole point of this version. It uses a pocket the cradle already
-# has: behind the panel, between two of the ribs, nothing was added for it.
-#   sideways      the ribs at |Y| 25 and 50 (RIB_T 4.2) leave a slot 27.10..47.90, 20.80 wide
-#   vertically    two SHOULDERS rest on the ribs' own top edges, a flat plane at board z 53.6
-#                 (robot Z 137.86 at the panel's back face, sloping to 137.0 eight mm behind it)
-#   fore and aft  the panel's back face in front, the shell behind
-# The tongue hangs 10 mm into the pocket and stops ~4 mm clear of the collar band at Z 124 - the
-# ribs carry the strap, not the band, whose top edge sweeps 6.6 mm in X across the pocket as it
-# follows the shell and would only have borne on a millimetre of the foot.
+# The FOOT (v3). v2 printed, and it had to be hot-glued in (2026-09-30): shoulders on the rib tops
+# and a 6 mm tongue locate the strap, but nothing HOLDS it - there is no downward-facing ledge in
+# that pocket to hook under, and a 3 g strap on a turning robot walks out. The owner drew the foot
+# running on down the panel's back. v3 does that, and adds the one thing depth alone cannot: a
+# spring.
+#
+# The pocket, measured (behind the panel's back face, between the ribs at |Y| 25 and 50, which
+# leave a slot 27.10..47.90 wide):
+#   above Z 124   6.7 mm deep at the inboard rib, 15.7 outboard - the shell is what is behind it
+#   below Z 124   the collar band comes in: 1.3 mm deep inboard, 8.8 outboard, and waisted, its
+#                 narrowest at about Z 108. Our own part, so exact, not a CAD proxy.
+#
+#   TONGUE   the full 20 mm between the ribs, down the panel's back to just above the band's top
+#            edge. Its inboard half rests ON that edge; outboard the band is behind it, clear.
+#   FINGER   a spring, down the panel's back into the band slot to Z 92, on the outboard half only -
+#            inboard the slot is too shallow for it. A nub on its back presses the band; the
+#            reaction pushes the whole strap forward until the tongue bears on the panel's back.
+#            So the strap is clamped between two faces of the SAME part (the tray-cradle's band
+#            and its back wall), and holds by friction.
+#
+# v2's shoulders are gone. They are what forced its tongue into a 45 deg wedge in the print (see
+# STRAP_C): with them, the part could not start flush on the plate without a cantilever somewhere.
 FOOT_W = 20.0                  # the tongue: 0.40 a side in the 20.80 slot (the ribs are ours, exact)
-SHOULDER_W = 3.0               # each side, onto the rib tops: 2.6 mm of contact on a 4.2 mm rib
 FOOT_D = 5.5                   # radial depth, CLAMPED per slice so the back never nears the shell
-FOOT_G = FIT_SLIDE             # 0.40 off the panel's back face
+FOOT_G = FIT_SLIDE             # 0.40 off the panel's back face - the gap the spring closes
 FOOT_DZ_TOP = 1.5              # top, in board z above OZ1: still under the panel's front top edge
-FOOT_DZ_RIB = -(OZ1 - 53.6)    # -2.50: the ribs' top plane, where the shoulders bed
-TONGUE_DROP = 6.0              # how far the tongue hangs below that (bottom near robot Z 132)
-# The tongue's sides taper 1 mm of drop per 1 mm of width - 45 deg - and it is worth saying WHY,
-# because the intuition is backwards. The part prints as a prism extruded along Y, so robot Y is
-# the print's vertical. A tongue side that drops 10 mm over 1.5 mm of Y looks nearly vertical in
-# the part and is nearly FLAT in the print: 10 mm of plate crossed while the nozzle rises 1.5.
-# Bambu Studio called that a floating cantilever, 8.4 mm of reach at z 3.1. So the tongue is a
-# wedge: the full 20 mm at the rib plane, 8 mm across at the bottom. The shoulders do the holding.
-TONGUE_RAMP = TONGUE_DROP
-FOOT_LEADIN = 1.5              # chamfer on the tongue's bottom corners, in the XZ profile
-SHOULDER_BREAK = 0.4           # only an edge break under the shoulders - they are the bearing face
+TONGUE_BOT = BAND_TOP + FIT_SLIDE   # 124.4: 0.4 over the collar band's top edge, which it rests on
+FOOT_LEADIN = 1.5              # chamfer on the tongue's bottom-front corner: finds the panel's back
+TONGUE_BREAK = 0.4             # only an edge break bottom-back - that corner is the bearing face
+EDGE_LEADIN = 0.8              # 45 deg on the bottom's ends in Y: finds the slot between the ribs
 
-# The strap is 14 wide and the foot 26, and the part prints as a prism extruded along Y. If the
-# strap sat in the middle of the foot, its whole outline - the run and the rim hook, 50 mm of it -
-# would begin 6 mm above the plate with nothing under it. Bambu Studio said so: "floating
-# cantilever", 214 mm2 of overhang and 20 mm2 on the plate. So the strap is FLUSH with the foot's
-# inboard edge instead: every outline starts at the plate and the part only ever loses material
-# going up. The strap's Y is free - nothing about the look depends on it - and inboard also keeps
-# the run off the shoulder, where the body falls away fastest.
-STRAP_C = STRAP_Y - FOOT_W / 2 - SHOULDER_W + STRAP_W / 2     # 31.5
+# The spring finger. PETG, E ~2 GPa (an estimate - no datasheet figure was checked). Numbers below
+# are for the finger as modelled; the check measures the real interference against the exported
+# tray-cradle and reports it.
+FINGER_Y = (37.5, 47.5)        # |Y|. Inboard of 37.5 the band slot's waist is under 3.95 mm and the
+                               # finger (FINGER_G + FINGER_T = 3.28 off the panel) would not clear it
+FINGER_T = lines(4)            # 1.68: flexes front-to-back, which in this print is ALONG the layers
+FINGER_G = 1.6                 # its front face off the panel's back: the room it deflects into
+FINGER_TIP = 92.0              # robot Z of its tip: the nub's 45 deg lead-in needs room below it
+NUB_Z = 104.0                  # robot Z of the nub's contact on the band, ~20 mm below the tongue
+NUB_H = 2.0                    # height of the nub's flat contact face
+NUB_UPPER = 70.0               # deg from horizontal, the nub's upper face: steep, so the nub stiffens
+                               # only a short length of the finger. The lower face is 45 deg - it is
+                               # the lead-in that rides over the band's top edge going in
+FINGER_PRELOAD = 0.8           # how far the nub presses into the band, AFTER the strap has moved
+                               # forward FOOT_G onto the panel (modelled interference 1.2). 0.6 was
+                               # the first pick; against the tray-cradle as PRINTED (its STL, whose
+                               # chords sit up to 0.28 inside the true surface at the nub) that left
+                               # only 0.34, so it went up. check() reports both.
+
+# The part prints as a prism extruded along Y (robot Y is the print's vertical), so every outline
+# must start on the plate and only ever shrink going up - an outline that begins partway up is a
+# floating cantilever (v2 learnt that twice from the slicer, and islands.py called both CLEAN). The
+# finger only fits outboard, so the strap and the tongue are made FLUSH with the OUTBOARD edge and
+# that edge goes down on the plate: strap, tongue and finger all start there; going up the finger
+# ends, then the strap, then the tongue. The strap is centred on |Y| 40.5 as a result - 9 mm further
+# out than v2's 31.5.
+STRAP_C = STRAP_Y + FOOT_W / 2 - STRAP_W / 2     # 40.5
 
 STITCH_IN, STITCH_W, STITCH_D = 2.2, lines(2), 0.5      # edge stitching, as on the backstrap's straps
 
@@ -219,6 +246,73 @@ def rim(y):
     return xr, zr
 
 
+# ------------------------------------------------------- the collar band's outer face (exact)
+def _cut_y(T, y):
+    """Segments (n, 2, 2) of [(x0, z0), (x1, z1)] where the plane Y = y cuts triangles T (n, 3, 3).
+    Vectorised: the band's surface is tens of thousands of triangles."""
+    T = T[(T[:, :, 1].min(1) <= y) & (T[:, :, 1].max(1) >= y)]
+    if not len(T):
+        return np.zeros((0, 2, 2))
+    ends = []
+    for a, b in ((0, 1), (1, 2), (2, 0)):
+        ya, yb = T[:, a, 1], T[:, b, 1]
+        ok = (ya != yb) & ((ya - y) * (yb - y) <= 0)
+        f = np.where(ok, (y - ya) / np.where(ya != yb, yb - ya, 1.0), 0.0)
+        p = T[:, a, :] + f[:, None] * (T[:, b, :] - T[:, a, :])
+        ends.append((ok, p[:, [0, 2]]))
+    segs = []
+    for i in range(len(T)):
+        pts = [p[i] for ok, p in ends if ok[i]]
+        if len(pts) >= 2:
+            segs.append(pts[:2])
+    return np.array(segs)
+
+
+def _cross_z(S, z):
+    """X values where the cut S crosses the line Z = z."""
+    if not len(S):
+        return np.zeros(0)
+    x0, z0, x1, z1 = S[:, 0, 0], S[:, 0, 1], S[:, 1, 0], S[:, 1, 1]
+    m = (z0 - z) * (z1 - z) < 0
+    return x0[m] + (z - z0[m]) / (z1[m] - z0[m]) * (x1[m] - x0[m])
+
+
+@functools.lru_cache(maxsize=1)
+def _band_solid():
+    """The collar band's OUTER face: the shell proxy grown by SHELL_CLR + BAND_T. That is exactly
+    how collar.band() makes it (proxy(outer) minus proxy(inner)), so this is the band's own surface,
+    not a copy of an export - the build must not depend on a previous build's out/ files."""
+    import collar
+    return collar.proxy(SHELL_CLR + BAND_T).val()
+
+
+@functools.lru_cache(maxsize=256)
+def _band_cut(y_hundredths):
+    """The band's outer face cut by the plane Y = y, as segments - by OCC section of the proxy
+    solid, sampled along each edge. Tessellating the proxy instead gave 1,770 triangles over the
+    whole region and put the face 0.27 mm off the export: a quarter of the entire preload."""
+    y = y_hundredths / 100.0
+    face = cq.Face.makePlane(600, 600, basePnt=cq.Vector(0, y, 90), dir=cq.Vector(0, 1, 0))
+    sec = _band_solid().intersect(face)
+    segs = []
+    for e in sec.Edges():
+        pts = [e.positionAt(t, mode="parameter") for t in np.linspace(0.0, 1.0, 600)]
+        for p, q in zip(pts[:-1], pts[1:]):
+            if max(p.x, q.x) > 30.0:
+                segs.append([(p.x, p.z), (q.x, q.z)])
+    return np.array(segs)
+
+
+def band_x(y, z):
+    """Robot X of the collar band's outer face at (y, z), on the front. Only meaningful at z up to
+    BAND_TOP: the proxy carries on above it, the band does not."""
+    xs = _cross_z(_band_cut(int(round(abs(y) * 100))), z)
+    xs = xs[xs > 30.0]
+    if not len(xs):
+        raise ValueError("no band at y %.2f z %.2f" % (y, z))
+    return float(xs.max())
+
+
 # ------------------------------------------------------------------- profiles (robot XZ plane)
 def _run_profile(y, z0, z1, g, t, n=24):
     """The shell run: a strip whose inner face is the shell + g, t thick, from z0 to z1.
@@ -277,55 +371,106 @@ def _gap_profile(y, g, t):
             (x_out, Z_LEAVE)]
 
 
-def _foot_profile(y):
-    """The foot: drops into the pocket between two of the cradle's ribs and lands on the top edge
-    of the collar band. The front face sits FOOT_G off the panel's back (and leans with it), the
-    back face FOOT_D behind that, and the bottom is horizontal so it beds flat on the band.
+def _lift(y, lo, hi, inboard=True, outboard=True):
+    """How far a bottom edge rises at |y| for a 45 deg lead-in over the last EDGE_LEADIN of [lo, hi].
+    In the print this is a 45 deg growth, not an overhang: robot Y is the print's vertical."""
+    a = abs(y)
+    up = 0.0
+    if inboard:
+        up = max(up, (lo + EDGE_LEADIN) - a)
+    if outboard:
+        up = max(up, a - (hi - EDGE_LEADIN))
+    return max(0.0, up)
 
-    Both bottom corners are chamfered, and the bottom RISES toward the outermost slices, which
-    puts the same 45 deg lead-in on the side corners: the foot has to be dropped blind down a
-    20.8 mm slot, and nothing in the cradle has a lead-in of its own."""
-    dz, c, d = _foot_shape(y)
+
+def _tongue_depth(y, zb):
+    """FOOT_D, clamped so the tongue's back face keeps SHELL_CLR from the body at every height it
+    spans. Only the inboard end gets clamped (~4.8 mm there: the shell comes closest to the panel)."""
+    zt = bp(-FOOT_G, FOOT_DZ_TOP)[1]
+    room = min((back_x(z) - FOOT_G) - (shell_x(y, z) + SHELL_CLR)
+               for z in (zb + (zt - zb) * i / 8.0 for i in range(9)))
+    return max(2.5, min(FOOT_D, room))
+
+
+def _tongue_profile(y):
+    """The tongue: the full slot width between the ribs, down the panel's back face (FOOT_G off it,
+    leaning with it) to TONGUE_BOT. Its bottom is horizontal so it beds flat on the band's top edge
+    where the band lies under it (the inboard half); the bearing corner gets only an edge break."""
+    zb = TONGUE_BOT + _lift(y, STRAP_Y - FOOT_W / 2, STRAP_Y + FOOT_W / 2)
+    d = _tongue_depth(y, zb)
+    xf = lambda z: back_x(z) - FOOT_G
+    c, k = FOOT_LEADIN, TONGUE_BREAK
     return [bp(-FOOT_G, FOOT_DZ_TOP),                         # top, at the panel's back face
-            bp(-FOOT_G, dz + c),                              # down the front face
-            bp(-FOOT_G - c, dz),                              # chamfer onto the bottom
-            bp(-FOOT_G - d + c, dz),                          # across the bottom (the bearing face)
-            bp(-FOOT_G - d, dz + c),                          # chamfer up the back
+            (xf(zb + c), zb + c),                             # down the front face
+            (xf(zb) - c, zb),                                 # chamfer onto the bottom
+            (xf(zb) - d + k, zb),                             # across the bottom (bears on the band)
+            (xf(zb + k) - d, zb + k),                         # edge break up the back
             bp(-FOOT_G - d, FOOT_DZ_TOP)]                     # up the back face
 
 
-def _foot_shape(y):
-    """(bottom dz, chamfer, depth) for the foot at this slice.
+def _nub(y):
+    """(face x, flat bottom z, flat top z, lower-ramp start z, upper-ramp end z) of the finger's nub.
 
-    Inside the slot the tongue hangs TONGUE_DROP below the ribs' top plane, tapering back up to
-    it over the last TONGUE_RAMP of width; outside it the shoulder stops ON that plane. The step
-    between the two IS the mount, so _foot_slices doubles up either side of it.
-
-    The depth is clamped so the back face keeps SHELL_CLR from the body at every height the slice
-    spans: the slot is ~10 mm deep at its centre but only ~4.7 at its inboard edge, where the
-    shell comes closest to the panel."""
-    a = abs(abs(y) - STRAP_Y)
-    half = FOOT_W / 2
-    if a < half:
-        dz, c = FOOT_DZ_RIB - TONGUE_DROP + max(0.0, a - (half - TONGUE_RAMP)), FOOT_LEADIN
-    else:
-        dz, c = FOOT_DZ_RIB, SHOULDER_BREAK
-    lo, hi = bp(-FOOT_G, dz)[1], bp(-FOOT_G, FOOT_DZ_TOP)[1]
-    room = min((back_x(z) - FOOT_G) - (shell_x(y, z) + SHELL_CLR)
-               for z in (lo + (hi - lo) * i / 6.0 for i in range(7)))
-    return dz, c, max(2.5, min(FOOT_D, room))
+    The nub's face is set into the band by FINGER_PRELOAD + FOOT_G: the spring's first job is to
+    push the strap forward FOOT_G until the tongue bears on the panel, and what is left presses."""
+    xfb = back_x(NUB_Z) - FINGER_G - FINGER_T
+    xn = band_x(y, NUB_Z) - (FINGER_PRELOAD + FOOT_G)
+    h = xfb - xn
+    z0, z1 = NUB_Z - NUB_H / 2, NUB_Z + NUB_H / 2
+    return xn, z0, z1, z0 - h, z1 + h / math.tan(math.radians(NUB_UPPER))
 
 
-def _foot_slices(sy):
-    """Y stations for the foot: doubled 0.01 either side of the slot's edge, so the step from
-    tongue to shoulder lofts as a vertical face rather than a 1 mm ramp."""
-    half, out = FOOT_W / 2, FOOT_W / 2 + SHOULDER_W
-    ds = [-out + i for i in range(int(out - half))]
-    ds += [-half - 0.01, -half + 0.01]
-    ds += list(range(-int(half) + 1, int(half)))
-    ds += [half - 0.01, half + 0.01]
-    ds += [half + 1.0 + i for i in range(int(out - half))]
-    return sorted(sy * (STRAP_Y + d) for d in ds)
+def _finger_profile(y):
+    """The spring: a 4-line blade down the panel's back (FINGER_G off it, so it has room to bend),
+    rooted 3 mm up inside the tongue, with a nub on its back pressing the band. The nub's height
+    varies across the width because the band sweeps away from the panel as it follows the shell;
+    the blade's does not, so every slice is the same spring with the same preload."""
+    tip = FINGER_TIP + _lift(y, FINGER_Y[0], FINGER_Y[1], inboard=False)
+    root = TONGUE_BOT + 3.0
+    xff = lambda z: back_x(z) - FINGER_G
+    xfb = lambda z: xff(z) - FINGER_T
+    xn, z0, z1, zlo, zhi = _nub(y)
+    c = 0.6
+    if zlo < tip + c + 0.5 or zhi > root - 2.0:
+        raise ValueError("nub at y %.2f runs from z %.2f to %.2f, outside the finger" % (y, zlo, zhi))
+    return [(xff(root), root),                               # root, inside the tongue
+            (xff(tip + c), tip + c),                          # down the front face
+            (xff(tip) - c, tip),                              # tip
+            (xfb(tip) + c, tip),
+            (xfb(tip + c), tip + c),
+            (xfb(zlo), zlo),                                  # up the back to the nub
+            (xn, z0),                                         # 45 deg lead-in onto the band
+            (xn, z1),                                         # the contact face
+            (xfb(zhi), zhi),                                  # steep upper face back to the blade
+            (xfb(root), root)]                                # up the back to the root
+
+
+def _nub_profile(y):
+    """A tool that takes the nub off, for the checks - it is MEANT to be into the band. Everything
+    behind the blade from 0.5 below the nub to 0.5 above it, and 0.3 into the blade. A tool traced
+    along the nub's own ramps left slivers of both ramps behind (0.72 mm3 read as interference)."""
+    xn, z0, z1, zlo, zhi = _nub(y)
+    xfb = lambda z: back_x(z) - FINGER_G - FINGER_T + 0.3
+    a, b = zlo - 0.5, zhi + 0.5
+    return [(xfb(a), a), (xn - 0.5, a), (xn - 0.5, b), (xfb(b), b)]
+
+
+def _span(sy, lo, hi, inboard=True, outboard=True):
+    """Y stations every SLICE across |Y| lo..hi, plus one EDGE_LEADIN in from each lifted end."""
+    ds = set(np.round(np.linspace(lo, hi, int(round((hi - lo) / SLICE)) + 1), 4))
+    if inboard:
+        ds.add(round(lo + EDGE_LEADIN, 4))
+    if outboard:
+        ds.add(round(hi - EDGE_LEADIN, 4))
+    return sorted(sy * d for d in ds)
+
+
+def _tongue_slices(sy):
+    return _span(sy, STRAP_Y - FOOT_W / 2, STRAP_Y + FOOT_W / 2)
+
+
+def _finger_slices(sy):
+    return _span(sy, FINGER_Y[0], FINGER_Y[1], inboard=False)
 
 
 def _wire(pts, y):
@@ -355,10 +500,16 @@ def build(sy=1, dressed=True):
     part = _loft(lambda y: _run_profile(y, Z_RUN0, rim(y)[1] - RIM_LAP + 3.0, g, t), ys)
     part = part.union(_loft(lambda y: _rim_profile(y, g, t), ys))
     part = part.union(_loft(lambda y: _gap_profile(y, g, t), ys))
-    part = part.union(_loft(_foot_profile, _foot_slices(sy)))
+    part = part.union(_loft(_tongue_profile, _tongue_slices(sy)))
+    part = part.union(_loft(_finger_profile, _finger_slices(sy)))
     if dressed:
         part = part.cut(_stitch(sy, ys, g, t))
     return part
+
+
+def nub(sy=1):
+    """The finger's nub on its own (robot frame), for the checks."""
+    return _loft(_nub_profile, _finger_slices(sy))
 
 
 def _stitch(sy, ys, g, t):
@@ -386,16 +537,11 @@ def _stitch(sy, ys, g, t):
 def to_bed(wp, sy=1):
     """On the plate the profile lies flat and robot Y is the print's vertical.
 
-    sy turns each side so ITS OWN flush edge is down. The strap is flush with the foot's inboard
-    edge (see STRAP_C), which is min Y on the left and max Y on the right; turning both the same
-    way would stand the right one on a shoulder and its whole strap outline would start 6 mm up in
-    mid-air.
-
-    Nearly a prism, but not quite: the shell falls away across the strap's width and the rim drops
-    5.3 mm, so the layers do shift. Measured on the export - 91 mm2 of face over 45 deg, 135 mm2 on
-    the plate, and a short bridge under the rim hook's bight. Bambu Studio slices it with no
-    support and no warning (39 min, 6.0 g the pair)."""
-    p = wp.rotate((0, 0, 0), (1, 0, 0), sy * 90)      # each side turned so ITS flush edge is down
+    sy turns each side so ITS OWN flush edge is down. Strap, tongue and finger are all flush with
+    the OUTBOARD edge (see STRAP_C), which is max Y on the left and min Y on the right. rotate(+90)
+    about X makes print z = robot Y, so the left turns -90 and the right +90; the other way round
+    stands each on the tongue's inboard end, and the strap and the finger both start in mid-air."""
+    p = wp.rotate((0, 0, 0), (1, 0, 0), -sy * 90)     # each side turned so ITS flush edge is down
     v, _ = p.val().tessellate(0.05, 0.2)
     xs, ys, zs = [q.x for q in v], [q.y for q in v], [q.z for q in v]
     return p.translate((-(min(xs) + max(xs)) / 2, -(min(ys) + max(ys)) / 2, -min(zs)))
@@ -409,6 +555,31 @@ def _overlap(a, b):
         return -1.0
 
 
+def _section(solid, y):
+    """The plane Y = y's exact OCC section of `solid`, as segments - the same method as _band_cut,
+    on an export instead of the proxy. Cut once per Y and read at many Z: sectioning per point
+    cost a whole-cradle boolean each time, and the check crawled."""
+    face = cq.Face.makePlane(600, 600, basePnt=cq.Vector(0, y, 90), dir=cq.Vector(0, 1, 0))
+    segs = []
+    for e in solid.intersect(face).Edges():
+        pts = [e.positionAt(t, mode="parameter") for t in np.linspace(0.0, 1.0, 800)]
+        segs += [[(p.x, p.z), (q.x, q.z)] for p, q in zip(pts[:-1], pts[1:])]
+    return np.array(segs)
+
+
+def _stl_x(S, z):
+    xs = _cross_z(S, z)
+    xs = xs[(xs > 30.0) & (xs < back_x(z) - 0.05)]
+    return float(xs.max()) if len(xs) else float("nan")
+
+
+def _stl_tris(p):
+    d = open(p, "rb").read()
+    n = struct.unpack("<I", d[80:84])[0]
+    v = np.frombuffer(d, np.dtype([("n", "<f4", 3), ("v", "<f4", (3, 3)), ("a", "<u2")]), count=n, offset=84)["v"]
+    return v.astype(float)
+
+
 def check():
     """Solid booleans against the three existing parts and the shell, plus the two clearances that
     only the mesh can answer. Exit 1 on failure. Reads the STEP exports, so it runs beside
@@ -418,13 +589,87 @@ def check():
     imp = cq.importers.importStep
     s = lambda n: imp(os.path.join(E.OUT, "step", "%s-%s.step" % (PRE, n)))
     straps = {side: s("%s-%s" % (NAME, side)) for side in ("left", "right")}
-    others = {n: s(n) for n in ("bezel", "tray-cradle", "backstrap")}
-    print("bib straps: interference with the parts that are already on the robot")
-    for side, strap in straps.items():
-        for n, o in others.items():
-            v = _overlap(strap.val(), o.val())
+    signs = {"left": 1, "right": -1}
+    # the existing parts, clipped to the region the straps ever occupy (fitted or on the way in):
+    # every boolean below is then against a small piece rather than a 135 cm3 cradle
+    # The bounds are deliberately off-grid. With whole numbers (Y -60..-18, Z 80..240) OCC returned
+    # the right side's cradle clip EMPTY - 0.0 mm3 against 13,953 on the left - with no error, and
+    # the right strap then "passed" every test against nothing. The guard below stops that recurring.
+    region = lambda sy: box(21.3, 109.1, sy * 18.7, sy * 59.3, 85.1, 235.3).val()
+    others = {side: {n: s(n).val().intersect(region(signs[side])) for n in ("bezel", "tray-cradle", "backstrap")}
+              for side in straps}
+    for side in straps:
+        vs = {n: others[side][n].Volume() for n in ("bezel", "tray-cradle")}
+        bad = min(vs.values()) < 1000.0
+        print("  %-5s clipped for the checks: bezel %.0f mm3, tray-cradle %.0f mm3 %s"
+              % (side, vs["bezel"], vs["tray-cradle"], "FAIL (a boolean came back empty)" if bad else "ok"))
+        ok &= not bad
+    # The nub is MEANT to be into the band - that is the spring's preload - so it comes off before
+    # looking for interference, and is measured on its own below.
+    bare = {side: straps[side].val().cut(nub(signs[side]).val()) for side in straps}
+    print("bib straps: interference with the parts that are already on the robot (nub removed)")
+    for side in straps:
+        for n, o in others[side].items():
+            v = _overlap(bare[side], o)
             bad = v > 0.05 or v < 0
             print("  %-5s vs %-12s overlap %7.3f mm3 %s" % (side, n, v, "FAIL" if bad else "ok"))
+            ok &= not bad
+    # ...and WITH the nub, which must be into the band on both sides. This is also what proves the
+    # clipped parts above are not empty.
+    for side in straps:
+        v = _overlap(straps[side].val(), others[side]["tray-cradle"])
+        bad = v < 5.0
+        print("  %-5s nub into the collar band %7.3f mm3 (the preload) %s" % (side, v, "FAIL" if bad else "ok"))
+        ok &= not bad
+
+    # The spring, against the band twice: as DESIGNED (exact section of the exported STEP) and as
+    # PRINTED (a cut of the exported STL - the slicer only ever sees the mesh, and its chords sit up
+    # to 0.28 mm inside the true surface here: collar.py exports with cadquery's default RELATIVE
+    # tolerance). interference = how far the nub's face sits inside the band's outer face; the strap
+    # then moves forward FOOT_G onto the panel, so what presses is that minus FOOT_G.
+    # bend = the most the finger has to bend on the way in, strap not yet moved forward: the nub
+    # rides from the band's top edge down past the slot's waist (~Z 108) to where it sits.
+    cradle = others["left"]["tray-cradle"]
+    mesh =_stl_tris(os.path.join(E.OUT, "stl", "%s-tray-cradle.stl" % PRE))
+    slope = -D_BACK[0] / D_BACK[1]            # the nub's X gains this per mm it moves down
+    print("the spring, nub on the collar band - design (STEP) / as printed (STL):")
+    worst_bend = 0.0
+    zs = np.arange(NUB_Z, BAND_TOP - 0.2, 0.5)
+    for y in _finger_slices(1):
+        xn = _nub(y)[0]
+        exact, cut = _section(cradle, y), _cut_y(mesh, y)
+        at = {"step": lambda z: _stl_x(exact, z),
+              "stl": lambda z: _stl_x(cut, z)}
+        inter = {k: f(NUB_Z) - xn for k, f in at.items()}
+        bend = max(f(z) - (xn - (z - NUB_Z) * slope) for f in at.values() for z in zs)
+        worst_bend = max(worst_bend, bend)
+        press = {k: v - FOOT_G for k, v in inter.items()}
+        bad = min(press.values()) < 0.25 or bend > FINGER_G - 0.2
+        print("  |Y| %4.1f  presses %4.2f / %4.2f mm once seated, bends %4.2f going in  %s"
+              % (y, press["step"], press["stl"], bend, "FAIL" if bad else "ok"))
+        ok &= not bad
+    lever = TONGUE_BOT + 3.0 - NUB_Z
+    print("  worst bend going in %.2f mm, of the %.2f in front of the finger: ~%.2f %% strain at the root"
+          " (%.1f mm lever, %.2f thick)  %s"
+          % (worst_bend, FINGER_G, 150.0 * FINGER_T * worst_bend / lever ** 2, lever, FINGER_T,
+             "FAIL" if worst_bend > FINGER_G - 0.2 else "ok"))
+
+    # Assembly path. The strap goes in, and comes out, along the panel's back face (it leans 6 deg,
+    # so straight up would drive the tongue into it after ~4 mm). Everything but the nub, which is
+    # meant to bend the finger, must clear everything at every step - the rim hook included.
+    up = (-D_BACK[0], 0.0, -D_BACK[1])
+    T = _body_tris()
+    print("assembly path, out along the panel's back face (nub removed):")
+    for side in straps:
+        P0 = np.array([[p.x, p.y, p.z] for p in bare[side].tessellate(0.2, 0.3)[0]])
+        Tn = T[((T.max(1) >= P0.min(0) - 60).all(1) & (T.min(1) <= P0.max(0) + 60).all(1))]
+        for d in (1.0, 2.0, 4.0, 8.0, 14.0, 20.0, 28.0, 38.0, 50.0):
+            m = bare[side].translate(cq.Vector(up[0] * d, 0, up[2] * d))
+            vs = [_overlap(m, o) for o in others[side].values()]
+            n_in = int(_inside(P0 + np.array(up) * d, Tn).sum())
+            bad = any(v > 0.05 or v < 0 for v in vs) or n_in > 0
+            print("  %-5s %4.0f mm: bezel %.3f  cradle %.3f  backstrap %.3f mm3, %d points in the shell wall  %s"
+                  % (side, d, vs[0], vs[1], vs[2], n_in, "FAIL" if bad else "ok"))
             ok &= not bad
     # The shell proxy's rings stop at z 140 (shell.py) and are copied up to 150, so it is only
     # trustworthy below the display's top edge. Above that the mesh answers, further down.
