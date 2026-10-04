@@ -31,7 +31,11 @@ def layers(h):
 
 
 FIT_SNAP = 0.40       # snap lip to wall, per side (reMixTape printed 0.2 on this X1C: +0.2 wiggle room)
-FIT_SLIDE = 0.40      # faces that slide past each other (joint tongue over its strip)
+FIT_SLIDE = 0.40      # faces that slide past each other
+FIT_JOINT = 0.50      # the side joint's sliding faces: tongue over plate, rails in grooves, boss under cap.
+                      # FIT_SLIDE + 0.1: these are 94 mm tall, thin, curved walls printed upright, which warp
+                      # more than the bezel lip FIT_SLIDE was proven on, and v0.5's 0.40 joint never went
+                      # together. The pin locks the joint, so play in the rails costs nothing.
 FIT_Z = 0.40          # any gap that lies across layers: two layers, never one
 FIT_CATCH = 0.30      # play at a snap's catch face (the springs take it up)
 HOLE_H_EXTRA = 0.30   # holes whose axis lies flat in the print come out small and sag: +0.3 and a teardrop roof
@@ -126,25 +130,49 @@ BAND_TOP = Z_BED_TARGET + layers(94.0)                    # 124: well above the 
 RIB_BX = [-50.0, -25.0, 0.0, 25.0, 50.0]                  # rib positions along the board's x (robot -Y)
 RIB_T = lines(10)
 # side joint, +Y side (mirrored for -Y). The collar splits near +/-90 deg. The front half ends in a
-# thin STRIP extruded along x (so the backstrap can slide along x over it); the backstrap ends in a
-# TONGUE plate outside the strip, with two vertical flex tabs whose hooks drop into windows in the strip.
+# side PLATE extruded along x; the backstrap ends in a TONGUE outside it, and slides on along x.
+#
+# v0.6 (2026-09-30): a rail-and-pin slide lock. v0.5 had two flex tabs per side whose hooks, on the
+# tongue's hidden inner face, were to drop into windows in a 1.26 mm strip. Printed, they never
+# clicked (owner), and the joint had to be glued. Now:
+#   * two RAILS on the plate run in two GROOVES in the tongue - they set the tongue's height and
+#     keep it on the plate, and a funnel at each groove's mouth catches a rail 2 mm out of line;
+#   * the tongue slides until its front edge meets a STOP on the tray-cradle;
+#   * a 4 mm PIN drops from the top through a CAP on the tray-cradle into a BOSS on the tongue. It
+#     is the lock, and it carries the collar's pull (the spring nubs keep it loaded).
+# Nothing flexes. The rails do not hook (see collar.rail()): in the upright print either the rail or
+# its groove would have to start in mid-air. The tongue cannot leave the plate anyway - the
+# backstrap would have to move bodily, and its other tongue is against the other plate.
 SPLIT_F_X = 12.0      # front band exists for x >= this
 SPLIT_B_X = -18.0     # backstrap band for x <= this
-STRIP_X, STRIP_T, STRIP_MARGIN = (-16.0, 14.0), lines(3), 0.4
-TONGUE_X, TONGUE_T = (-26.0, 11.2), lines(5)
+STRIP_X, STRIP_T, STRIP_MARGIN = (-16.0, 14.0), lines(5), 0.4   # the side plate, 2.1 (was a 1.26 strip)
+TONGUE_X, TONGUE_T = (-26.0, 11.2), lines(7)                    # 2.94: a 1.2 groove leaves 1.74 (was 2.1)
 WEDGE_X = (-26.0, -17.0)
-JOINT_GAP = FIT_SLIDE
-TABS = [(40.0, 62.0), (88.0, 110.0)]                      # (root z, tip z) of each flex tab
-TAB_X, SLIT = (-10.0, 0.0), 1.0     # flexure slits 1.0 (was 0.84: PETG ooze and fat perimeters can close a 2-line gap)
-HOOK_X, HOOK_H, HOOK_D = (-9.0, -3.0), layers(4.8), 1.0
-PULL_LIP = lines(2)   # 0.84: only 0.6 mm of lift releases a hook; a bigger lip invites lifting 2-3 mm (1.3-2 % strain across layers)
-LEADIN_JOINT = 0.8    # 45 deg chamfers where the tongue's front edge meets the strip's rear edge
-SIDE_BUTTONS = [(6.0, 50.0), (6.0, 98.0)]
+JOINT_GAP = FIT_JOINT
+# Rails at z 70 and 100, where the side of the shell is nearly vertical (side_r changes < 0.1 per
+# mm): the rail and groove follow the shell, and at z 52 its 0.1 slope tipped the rail's 45 deg
+# underside to 42. Flanks are 1 : 0.85 (49.6 deg), which keeps every underside at 45 or steeper.
+RAIL_Z = [70.0, 100.0]           # z centres
+RAIL_W, RAIL_H = 6.4, 1.2        # root width at the plate face (z) and height (radial)
+RAIL_K = 0.85                    # flank: radial mm per z mm
+RAIL_LEADIN = 2.0                # 45 deg in x on each rail's rear end: it enters the groove narrow
+GROOVE_REAR = -17.0              # the grooves' closed end; the rails stop at STRIP_X[0], 1.0 short of it
+FUNNEL = 2.0                     # each groove's mouth flares this much up and down, at 45 deg
+STOP_X = (TONGUE_X[1] + 0.2, TONGUE_X[1] + 3.2)   # the tongue's front edge stops 0.2 short of it
+PIN_D, PIN_HOLE = 4.0, 4.8       # 0.4 a side: the pin drops in with the two parts up to 0.4 out of line in y
+PIN_X = -2.0                     # the pin's axis (x); the plate and the tongue both span it
+PIN_Z0 = 112.0                   # bottom of the pin's hole, in the tongue's boss
+PIN_WALL = lines(4)              # 1.68 round the hole, in the boss and the cap
+PIN_HEAD_D, PIN_HEAD_H = 8.0, layers(2.0)
+PIN_TIP = 0.6                    # 45 deg chamfer on the pin's tip and a countersink on the cap's hole
+LEADIN_JOINT = 0.8    # 45 deg chamfers where the tongue's front edge meets the plate's rear edge
+SIDE_BUTTONS = [(5.0, 40.0), (5.0, 84.0)]   # cosmetic, on the tongue, clear of the grooves and the boss
+SLIT = 1.0            # flexure slits (spring tabs) 1.0 (was 0.84: PETG ooze and fat perimeters can close a 2-line gap)
 # spring tabs in the backstrap: U-slot flexures with an inward nub, preloading the collar
 SPRINGS = [180.0, 120.0, 240.0]                           # deg
 # Spring tabs 1.26 thick (band 2.52 thinned by 1.26) and longer (z 37-62). The nub reach adds the play the
-# collar loses when it seats (ribs RIB_CLR onto the belly + hook FIT_CATCH), projected on each nub's
-# direction: 1.9 mm at 180 deg, 1.55 at 120/240, so ~1.2 mm remains once seated (~0.6 % strain).
+# collar loses when it seats (ribs RIB_CLR onto the belly + the pin's play in its holes, PIN_HOLE - PIN_D),
+# projected on each nub's direction: 2.4 mm at 180 deg, 1.8 at 120/240, so ~1.2 mm remains once seated.
 SPRING_Z, SPRING_W, SPRING_THIN, PRELOAD, NUB_W = (37.0, 62.0), 12.0, lines(3), 1.2, 5.0
 GUTTER = dict(w=6.0, t=lines(4), h=6.0, x_max=-28.0)      # cable gutter along the backstrap's bottom
 

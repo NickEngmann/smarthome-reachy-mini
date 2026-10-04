@@ -78,24 +78,167 @@ def both_sides(wp):
 
 
 # ------------------------------------------------------------------- side joint (+Y)
-A_STRIP = SHELL_CLR + STRIP_MARGIN                 # strip inner face offset from the shell side
-B_STRIP = A_STRIP + STRIP_T
-A_TONGUE = B_STRIP + JOINT_GAP
-B_TONGUE = A_TONGUE + TONGUE_T
+# The rail-and-pin slide lock (geom.py, "side joint"). Everything below is +Y and mirrored.
+A_STRIP = SHELL_CLR + STRIP_MARGIN                 # plate inner face offset from the shell side (1.9)
+B_STRIP = A_STRIP + STRIP_T                        # plate outer face (4.0)
+A_TONGUE = B_STRIP + JOINT_GAP                     # tongue inner face (4.4)
+B_TONGUE = A_TONGUE + TONGUE_T                     # tongue outer face (7.34)
 
 
-def hook_z(tab):
-    zr, zt = tab
-    return zt - 0.6 - HOOK_H, zt - 0.6
+def _flank_prism(zc, u_lo, h, half_w, x0, x1, step=0.4):
+    """A (radial, z) outline extruded along x: from shell offset u_lo out to B_STRIP + h(dz), for
+    |dz| <= half_w, following side_r(z) - so it rides the plate's own curve, and a rail and its
+    groove share it exactly."""
+    n = max(4, int(math.ceil(2 * half_w / step)))
+    zs = [zc - half_w + 2 * half_w * i / n for i in range(n + 1)]
+    pts = [(side_r(z) + B_STRIP + h(z - zc), z) for z in zs] + [(side_r(z) + u_lo, z) for z in reversed(zs)]
+    return cq.Workplane("YZ", origin=(x0, 0, 0)).polyline(pts).close().extrude(x1 - x0)
+
+
+def _rail_h(dz):
+    """Rail height (radial) at dz from its centre: RAIL_H on top, flanks 1 : RAIL_K to the root."""
+    return max(0.0, min(RAIL_H, (RAIL_W / 2 - abs(dz)) * RAIL_K))
+
+
+# Groove clearance: FIT_JOINT normal to every face. On a 1 : RAIL_K flank that is a z shift of
+# FIT_JOINT * sqrt(1 + K^2) / K; on the rail's top, FIT_JOINT radially.
+_GZ = FIT_JOINT * math.sqrt(1 + RAIL_K ** 2) / RAIL_K
+
+
+def _groove_h(dz):
+    return max(0.05, min(RAIL_H + FIT_JOINT, (RAIL_W / 2 + _GZ - abs(dz)) * RAIL_K))
+
+
+def rail(zc):
+    """A trapezoid rail on the plate's outer face, narrower at its tip. Both flanks lean in, so both
+    print on what is below them: the lower flank grows out from the plate at 49.6 deg and the upper
+    one is a top. (A dovetail would hook, but its groove's roof would then start at the tongue's
+    face with nothing under it - a floating sliver along the whole groove.) Its rear end narrows at
+    45 deg in x, so it enters the groove's mouth thin."""
+    x0, x1 = STRIP_X
+    r = _flank_prism(zc, B_STRIP - 0.3, _rail_h, RAIL_W / 2, x0, x1)
+    L, top, bot = RAIL_LEADIN, zc + RAIL_W / 2 + 0.1, zc - RAIL_W / 2 - 0.1
+    for tri in ([(x0 - 0.1, top), (x0 + L, top), (x0 - 0.1, top - L - 0.1)],
+                [(x0 - 0.1, bot), (x0 + L, bot), (x0 - 0.1, bot + L + 0.1)]):
+        r = r.cut(cq.Workplane("XZ", origin=(0, 200, 0)).polyline(tri).close().extrude(400))
+    return r
+
+
+def groove(zc):
+    """The rail's groove in the tongue's inner face: the rail grown by FIT_JOINT on every face, from
+    GROOVE_REAR out through the tongue's front edge. Its roof comes down toward the groove's depth,
+    so the tongue above it grows out from the solid behind the groove. The mouth flares FUNNEL up
+    and down at 45 deg (a 45 deg underside, supported from behind)."""
+    x1 = TONGUE_X[1] + 1.0
+    g = _flank_prism(zc, B_STRIP + 0.05, _groove_h, RAIL_W / 2 + _GZ - 0.06, GROOVE_REAR, x1)
+    hw = RAIL_W / 2 + _GZ - (A_TONGUE - B_STRIP) / RAIL_K          # the groove's half-width at the tongue face
+    u0, u1 = side_r(zc) + B_STRIP + 0.05, side_r(zc) + B_STRIP + RAIL_H + FIT_JOINT
+    xm, F = TONGUE_X[1], FUNNEL
+    for s in (1, -1):
+        e = zc + s * hw
+        tri = [(xm - F, e - s * 0.2), (x1, e - s * 0.2), (x1, e + s * (F + 1.0))]
+        g = g.union(cq.Workplane("XZ", origin=(0, u1, 0)).polyline(tri).close().extrude(u1 - u0))
+    return g
+
+
+def _top_y():
+    """Radial layout of the pin block, in robot y (constant up the block, which stands above the
+    band where the tongue and plate no longer follow the shell):
+      yp   the plate's outer face just above the band - the cap's underside starts there
+      ypin the pin's axis: PIN_WALL + the hole's radius outside the tongue's inner face, everywhere
+           the hole runs down the tongue
+      ybo  the boss's and the cap's outer face
+      ybi  the boss's inner edge: inside the tongue at every z of the boss (0.3 in from its inner
+           face at the widest z)."""
+    zt = BAND_TOP
+    yp = side_r(zt + FIT_Z) + B_STRIP
+    r = PIN_HOLE / 2
+    span = [PIN_Z0 - 4.0 + i * 0.5 for i in range(int((zt - PIN_Z0 + 4.0) / 0.5) + 1)]
+    ypin = max(side_r(z) for z in span) + A_TONGUE + PIN_WALL + r
+    ybo = ypin + r + PIN_WALL
+    ybi = max(side_r(z) for z in span) + A_TONGUE + 0.3
+    assert ybi < min(side_r(z) for z in span) + B_TONGUE - 0.3, "the boss's inner edge leaves the tongue"
+    return yp, ypin, ybo, ybi
+
+
+def _pin_x():
+    h = PIN_HOLE / 2 + PIN_WALL + 1.0
+    return PIN_X - h, PIN_X + h
+
+
+def _cap_top():
+    yp, ypin, ybo, ybi = _top_y()
+    return BAND_TOP + FIT_Z + (ybo - yp) + lines(6)                  # 2.5 of cap over its outer edge
+
+
+def cap():
+    """On the tray-cradle: the plate carried up past the band, and a cap reaching out over the
+    tongue's boss. Its underside rises outward at 45 deg from the plate's face (it prints from the
+    plate); the boss's top follows it FIT_JOINT below, so the boss slides in under it along x."""
+    yp, ypin, ybo, ybi = _top_y()
+    x0, x1 = _pin_x()
+    ztop = _cap_top()
+    lo = BAND_TOP + FIT_Z
+    # the inner edge runs down the middle of the plate, which leans in with the shell above the band
+    # (side_r falls 2.2 mm from z 124 to 137, more than the plate is thick). A straight edge left a
+    # 1.7 mm flat overhang inside the plate, 0.2 mm off the shell.
+    n = 8
+    inner = [(side_r(lo + (ztop - lo) * i / n) + (A_STRIP + B_STRIP) / 2, lo + (ztop - lo) * i / n) for i in range(n + 1)]
+    pts = [(yp, lo), (ybo, lo + (ybo - yp)), (ybo, ztop)] + inner[::-1]
+    c = cq.Workplane("YZ", origin=(x0, 0, 0)).polyline(pts).close().extrude(x1 - x0)
+    return c.union(side_skin(A_STRIP, B_STRIP, x0, x1, BAND_TOP - 1.0, ztop))
+
+
+def boss():
+    """On the backstrap's tongue: the block the pin goes down into. Its top is the cap's underside
+    less FIT_JOINT (normal to the 45 deg face), its underside a 45 deg chamfer up from the tongue.
+    The hole's floor is 1.5 below PIN_Z0 at its outer edge."""
+    yp, ypin, ybo, ybi = _top_y()
+    x0, x1 = _pin_x()
+    top = lambda y: BAND_TOP + FIT_Z - FIT_JOINT * math.sqrt(2) + (y - yp)
+    zb = PIN_Z0 - 1.5 - (ypin + PIN_HOLE / 2 - ybi)
+    pts = [(ybi, zb), (ybo, zb + (ybo - ybi)), (ybo, top(ybo)), (ybi, top(ybi))]
+    return cq.Workplane("YZ", origin=(x0, 0, 0)).polyline(pts).close().extrude(x1 - x0)
+
+
+def pin_hole():
+    yp, ypin, ybo, ybi = _top_y()
+    ztop = _cap_top()
+    h = cq.Workplane().add(cq.Solid.makeCylinder(PIN_HOLE / 2, ztop + 1.0 - PIN_Z0, cq.Vector(PIN_X, ypin, PIN_Z0), cq.Vector(0, 0, 1)))
+    c = PIN_TIP
+    csk = cq.Workplane().add(cq.Solid.makeCone(PIN_HOLE / 2, PIN_HOLE / 2 + c + 0.5, c + 0.5, cq.Vector(PIN_X, ypin, ztop - c), cq.Vector(0, 0, 1)))
+    return h.union(csk)
+
+
+def pin():
+    """The lock, as it sits (+Y side): a head on the cap, a shaft down through the cap into the boss,
+    stopping 0.6 short of the hole's floor, a 45 deg chamfer on its tip. Printed head-down."""
+    yp, ypin, ybo, ybi = _top_y()
+    ztop = _cap_top()
+    z0 = PIN_Z0 + 0.6
+    r, c = PIN_D / 2, PIN_TIP
+    # the head sits 0.02 above the cap: resting exactly on it would be a tangent face for the checks
+    shaft = cq.Workplane().add(cq.Solid.makeCylinder(r, ztop + 0.5 - z0 - c, cq.Vector(PIN_X, ypin, z0 + c), cq.Vector(0, 0, 1)))
+    tip = cq.Workplane().add(cq.Solid.makeCone(r - c, r, c + 0.01, cq.Vector(PIN_X, ypin, z0), cq.Vector(0, 0, 1)))
+    head = cq.Workplane().add(cq.Solid.makeCylinder(PIN_HEAD_D / 2, PIN_HEAD_H, cq.Vector(PIN_X, ypin, ztop + 0.02), cq.Vector(0, 0, 1)))
+    return shaft.union(tip).union(head)
+
+
+def stop():
+    """On the tray-cradle, ahead of the tongue: the backstrap slides until the tongue's front edge
+    meets it, and there the two halves of the pin hole line up (0.2 past: the hole's 0.25 play
+    takes it)."""
+    return side_skin(A_STRIP, B_TONGUE, STOP_X[0], STOP_X[1])
 
 
 def strip():
+    """The tray-cradle's side plate, its two rails, the stop and the cap."""
     s = side_skin(A_STRIP, B_STRIP, STRIP_X[0], STRIP_X[1])
-    for tab in TABS:
-        h0, h1 = hook_z(tab)
-        # window; its bottom clears the hook's 45 deg underside, which enters the strip's plane at h0 - 0.6
-        s = s.cut(box(HOOK_X[0] - FIT_CATCH, HOOK_X[1] + 0.8, 40, 120, h0 - 1.2, h1 + 0.6))
-    return s.cut(side_corner_cut(STRIP_X[0], +1, B_STRIP, +1, LEADIN_JOINT))       # lead-in at the rear outer edge
+    s = s.cut(side_corner_cut(STRIP_X[0], +1, B_STRIP, +1, LEADIN_JOINT))       # lead-in at the rear outer edge
+    for zc in RAIL_Z:
+        s = s.union(rail(zc))
+    s = s.union(stop()).union(cap())
+    return s.cut(pin_hole())
 
 
 def side_corner_cut(x_end, dx, a, da, size, step=2.0):
@@ -117,31 +260,14 @@ def side_corner_cut(x_end, dx, a, da, size, step=2.0):
 
 
 def tongue(tabs=True, buttons=True):
+    """The backstrap's side tongue: two grooves for the plate's rails, and the boss the pin goes
+    down into. `tabs` (kept for bisect_backstrap.py's variants) now switches the grooves and the
+    boss - the joint's features - since v0.6 has no flex tabs."""
     t = side_skin(A_TONGUE, B_TONGUE, TONGUE_X[0], TONGUE_X[1])
-    for tab in (TABS if tabs else []):
-        zr, zt = tab
-        x0, x1 = TAB_X
-        # U-slot whose top closes in a 45 deg point: a flat top slit is a bridge right above the tab, which
-        # can sag onto it in the upright print and fuse the flexure
-        slot, _ = E.gable_slot((x0 + x1) / 2, (x1 - x0) / 2, zr, zt, SLIT, 40.0, 120.0)
-        t = t.cut(slot)
-        # hook on the tab's inner face: catch face at HOOK_X[0] (the collar pulls the backstrap -x
-        # onto it), a ramp toward +x that leads as the backstrap slides forward
-        h0, h1 = hook_z(tab)
-        yi = side_r((h0 + h1) / 2) + A_TONGUE
-        pts = [(HOOK_X[0], yi + 0.3), (HOOK_X[0], yi - HOOK_D), (HOOK_X[0] + 1.0, yi - HOOK_D), (HOOK_X[1], yi + 0.3)]
-        zb0 = h0 - HOOK_D - 0.3
-        hook = cq.Workplane("XY", origin=(0, 0, zb0)).polyline(pts).close().extrude(h1 - zb0)
-        # 45 deg underside: the hook's catch face and top are unchanged, its bottom slopes from the
-        # tongue face (z zb0) to the tip (z h0) instead of hanging flat in the upright print
-        py, pz = yi + 0.3, zb0
-        tri = [(py + 20.0, pz - 20.0), (py - 20.0, pz + 20.0), (py - 20.0, pz - 20.0)]
-        hook = hook.cut(cq.Workplane("YZ", origin=(HOOK_X[0] - 1.0, 0, 0)).polyline(tri).close().extrude(HOOK_X[1] - HOOK_X[0] + 2.0))
-        t = t.union(hook)
-        # pull lip at the tab's tip: lift it with a fingernail to release; 45 deg underside
-        yo = side_r(zt) + B_TONGUE
-        lip = [(yo - 0.3, zt - 2.0 - PULL_LIP), (yo + PULL_LIP, zt - 2.0), (yo + PULL_LIP, zt), (yo - 0.3, zt)]
-        t = t.union(cq.Workplane("YZ", origin=(x0, 0, 0)).polyline(lip).close().extrude(x1 - x0))
+    if tabs:
+        for zc in RAIL_Z:
+            t = t.cut(groove(zc))
+        t = t.union(boss())
     for bx, bz in (SIDE_BUTTONS if buttons else []):  # dungaree side buttons on the fixed part of the tongue
         # sunk 1.0 into the 2.1 tongue from its innermost face over the disc's height: sunk 0.3 at the
         # centre only, the disc's lowest layers missed the tongue (which follows the shell inward
@@ -153,7 +279,8 @@ def tongue(tabs=True, buttons=True):
         for dx in (-1.2, 1.2):
             btn = btn.cut(cq.Workplane().add(cq.Solid.makeCylinder(0.6, 2.0, cq.Vector(bx + dx, yo + 0.5, bz), cq.Vector(0, 1, 0))))
         t = t.union(btn)
-    return t.cut(side_corner_cut(TONGUE_X[1], -1, A_TONGUE, -1, LEADIN_JOINT))   # lead-in at the front inner edge
+    t = t.cut(side_corner_cut(TONGUE_X[1], -1, A_TONGUE, -1, LEADIN_JOINT))   # lead-in at the front inner edge
+    return t.cut(pin_hole()) if tabs else t
 
 
 def wedge():
@@ -208,7 +335,7 @@ def spring_nubs():
     nubs = None
     for th in SPRINGS:
         rs = shell.radius_at(prof(), zc, th)
-        reach = PRELOAD + (RIB_CLR + FIT_CATCH) * abs(math.cos(math.radians(th)))   # play lost when the collar seats
+        reach = PRELOAD + (RIB_CLR + PIN_HOLE - PIN_D) * abs(math.cos(math.radians(th)))   # play lost when the collar seats
         ri, rt = rs + SHELL_CLR + SPRING_THIN / 2, rs - reach     # base mid-way through the thinned tab
         d = ri - rt
         base = cq.Workplane("YZ", origin=(ri, 0, 0)).rect(top_w + 2 * d, top_h + 2 * d).val()
@@ -397,19 +524,38 @@ def check_paths(solids, tray_b, bezel_b, cradle, backstrap, nubs, shell0):
         bad = v > 0.05 or v < 0
         print("  tray-cradle %4.1f mm off the belly vs shell: %.3f mm3 %s" % (d, v, "FAIL" if bad else "ok"))
         ok &= not bad
-    zone = None
-    for tab in TABS:
-        h0, h1 = hook_z(tab)
-        z = box(HOOK_X[0] - 1.0, HOOK_X[1] + 1.0, 60, 110, h0 - 2.0, h1 + 1.0)
-        zone = z if zone is None else zone.union(z)
-    zone = both_sides(zone)
-    bs = backstrap.val().cut(nubs.val()).cut(zone.val())
-    for d in (1.0, 3.0, 6.0, 10.0, 15.0, 20.0, 30.0, 45.0, 60.0, 80.0, 100.0):
+    # v0.6: nothing on the joint flexes, so only the spring nubs come off. The path is the rails'
+    # whole run and past the rear of the plate: the pins must be out, so they are not in `backstrap`.
+    bs = backstrap.val().cut(nubs.val())
+    for d in (0.5, 1.0, 3.0, 6.0, 10.0, 15.0, 20.0, 25.0, 30.0, 38.0, 45.0, 60.0, 80.0, 100.0):
         m = bs.translate(cq.Vector(-d, 0, 0))
         v1, v2 = overlap(m, shell0), overlap(m, cr)
         bad = v1 > 0.05 or v2 > 0.05 or v1 < 0 or v2 < 0
-        print("  backstrap %4.1f mm back: vs shell %.3f mm3, vs tray-cradle %.3f mm3 %s" % (d, v1, v2, "FAIL" if bad else "ok"))
+        print("  backstrap %5.1f mm back: vs shell %.3f mm3, vs tray-cradle %.3f mm3 %s" % (d, v1, v2, "FAIL" if bad else "ok"))
         ok &= not bad
+    # The stop is real: 0.4 further forward than seated, the tongues run into it (0.2 of travel left).
+    v = overlap(bs.translate(cq.Vector(0.4, 0, 0)), cr)
+    print("  backstrap 0.4 mm FORWARD of seated vs tray-cradle: %.3f mm3 (the stop; must be > 0) %s" % (v, "ok" if v > 0.05 else "FAIL"))
+    ok &= v > 0.05
+    # The pins: clear of both parts where they sit, in both halves' holes (so they lock), and they
+    # lift straight out.
+    pins = both_sides(pin()).val()
+    for name, part in (("tray-cradle", cr), ("backstrap", backstrap.val())):
+        v = overlap(pins, part)
+        bad = v > 0.05 or v < 0
+        print("  pins vs %-11s %.3f mm3 %s" % (name, v, "FAIL" if bad else "ok"))
+        ok &= not bad
+    # positive control: a rod 0.3 wider than the HOLE (not the pin - the hole has 0.4 of play) must
+    # hit both parts, or the pin is not actually passing through both of them
+    for name, part in (("tray-cradle", cr), ("backstrap", bs)):
+        grown = both_sides(cq.Workplane().add(cq.Solid.makeCylinder(PIN_HOLE / 2 + 0.3, 60.0, cq.Vector(PIN_X, _top_y()[1], PIN_Z0 + 0.6), cq.Vector(0, 0, 1)))).val()
+        v = overlap(grown, part)
+        print("  rod 0.3 over the hole vs %-11s %.2f mm3 (> 0: the pin passes through this part) %s" % (name, v, "ok" if v > 0.05 else "FAIL"))
+        ok &= v > 0.05
+    for d in (2.0, 10.0, 30.0):
+        v = overlap(pins.translate(cq.Vector(0, 0, d)), cr) + overlap(pins.translate(cq.Vector(0, 0, d)), backstrap.val())
+        print("  pins lifted %4.1f mm: %.3f mm3 %s" % (d, v, "FAIL" if v > 0.05 else "ok"))
+        ok &= v <= 0.05
     return ok
 
 
@@ -449,21 +595,26 @@ def main(argv=None):
     cradle = build_cradle(tray_b, dressed)
     backstrap = build_backstrap(True, dressed)
     bezel_r = to_robot(bezel_b)
-    parts = {"bezel": bezel_r, "tray-cradle": cradle, "backstrap": backstrap}
+    pins = both_sides(pin())
+    parts = {"bezel": bezel_r, "tray-cradle": cradle, "backstrap": backstrap, "pins": pins}
     for n, p in parts.items():
         report(n, p)
     pre = "reachy-crowpanel"
     for n, p in parts.items():
         cq.exporters.export(p, os.path.join(E.OUT, "step", "%s-%s.step" % (pre, n)))
         cq.exporters.export(p, os.path.join(E.OUT, "stl", "%s-%s.stl" % (pre, n)), tolerance=0.02, angularTolerance=0.1)
+    # the two pins head-down, side by side (in the robot they are 170 mm apart)
+    one = pin().translate((-PIN_X, -_top_y()[1], 0)).rotate((0, 0, 0), (1, 0, 0), 180)
     prints = {"bezel": to_bed(bezel_b.rotate((0, 0, 0), (1, 0, 0), -90)),   # face (+y) down
-              "tray-cradle": to_bed(cradle), "backstrap": to_bed(backstrap)}
+              "tray-cradle": to_bed(cradle), "backstrap": to_bed(backstrap),
+              "pins": to_bed(one.union(one.translate((PIN_HEAD_D + 6.0, 0, 0))))}
     for n, p in prints.items():
         cq.exporters.export(p, os.path.join(E.OUT, "print", "%s-%s-print.stl" % (pre, n)), tolerance=0.02, angularTolerance=0.1)
     asm = cq.Assembly()
     asm.add(bezel_r, name="bezel", color=cq.Color(0.20, 0.33, 0.52))
     asm.add(cradle, name="tray-cradle", color=cq.Color(0.20, 0.33, 0.52))
     asm.add(backstrap, name="backstrap", color=cq.Color(0.20, 0.33, 0.52))
+    asm.add(pins, name="pins", color=cq.Color(0.72, 0.45, 0.20))
     try:
         board = cq.Workplane().add(cq.Compound.makeCompound(board_solids()))
         asm.add(to_robot(board), name="crowpanel", color=cq.Color(0.15, 0.15, 0.17))

@@ -28,6 +28,8 @@ REACHY = (0.93, 0.93, 0.91)
 DENIM = (0.25, 0.40, 0.62)
 DENIM_DARK = (0.19, 0.30, 0.48)
 BOARD = (0.08, 0.10, 0.14)
+DENIM_LIGHT = (0.45, 0.60, 0.80)    # the backstrap in the exploded joint view, to tell it from the tray-cradle
+PIN = (0.80, 0.55, 0.25)            # the joint pins: copper, like jeans rivets
 
 
 def load_stl(path):
@@ -99,9 +101,10 @@ def board_in_robot():
 def main():
     os.makedirs(RDIR, exist_ok=True)
     reachy = load_stl(os.path.join(REPO, "cad", "reachy-mini", "reachy_mini_body.stl"))
-    P = {n: subdivide(load_stl(os.path.join(OUT, "stl", "%s-%s.stl" % (PRE, n)))) for n in ("bezel", "tray-cradle", "backstrap")}
+    P = {n: subdivide(load_stl(os.path.join(OUT, "stl", "%s-%s.stl" % (PRE, n)))) for n in ("bezel", "tray-cradle", "backstrap", "pins")}
     board = board_in_robot()
-    full = [(reachy, REACHY), (board, BOARD), (P["tray-cradle"], DENIM), (P["backstrap"], DENIM), (P["bezel"], DENIM_DARK)]
+    full = [(reachy, REACHY), (board, BOARD), (P["tray-cradle"], DENIM), (P["backstrap"], DENIM), (P["bezel"], DENIM_DARK),
+            (P["pins"], PIN)]
     draw(full, "hero", 20, 38, "Reachy Mini in dungarees: CrowPanel 7\" P4 as the bib (body only shown)")
     draw(full, "front", 4, 0, "front: stitched bib, buttons, heart")
     draw(full, "side-usb", 6, 90, "robot's left: USB-C x2 + switch slot, strap & buckle, full-height side joint")
@@ -109,19 +112,24 @@ def main():
     draw(full, "back-three-quarter", 22, 215, "back three-quarter", light=(-0.6, 0.3, 0.75))
     draw([(board, BOARD), (P["tray-cradle"], DENIM), (P["backstrap"], DENIM), (P["bezel"], DENIM_DARK)], "enclosure-only", 22, 140,
          "enclosure without the robot", light=(-0.4, 0.5, 0.75))
-    draw(full, "joint-closeup", 10, 70, "side joint: tongue over the strip, two flex tabs with pull lips, side buttons",
-         lims=((-34.0, 26.0), (60.0, 100.0), (26.0, 128.0)), zoom=1.0)
+    draw(full, "joint-closeup", 16, 70, "side joint (v0.6): the backstrap's tongue on two rails, its pin dropped through the cap",
+         lims=((-34.0, 26.0), (60.0, 100.0), (26.0, 142.0)), zoom=1.0)
+    # the same joint pulled apart: backstrap 40 mm back along its slide, pin 25 mm up
+    apart = [(P["tray-cradle"], DENIM), (P["backstrap"] + np.array([-40.0, 0, 0]), DENIM_LIGHT), (P["pins"] + np.array([0, 0, 25.0]), PIN)]
+    draw(apart, "joint-exploded", 16, 70, "side joint apart: rails on the tray-cradle, grooves and boss on the backstrap (lighter), pin above",
+         lims=((-74.0, 26.0), (60.0, 100.0), (26.0, 170.0)), zoom=1.0)
     # close-ups with a low, raking light so shallow stitching and engraving read
     draw([(P["bezel"], DENIM_DARK), (board, BOARD)], "bib-closeup", 8, 12, "bib: stitched border, buttons, heart (engraved, face-down print)",
          lims=((90.0, 120.0), (-95.0, 95.0), (25.0, 150.0)), zoom=1.1, light=(0.35, 0.9, 0.25))
     draw([(P["backstrap"], DENIM)], "back-closeup", 10, 180, "back: edge-stitched crossed straps, buttons, pockets, waistband stitching, belt loops",
          lims=((-100.0, -30.0), (-80.0, 80.0), (26.0, 128.0)), zoom=1.1, light=(-0.35, 0.85, 0.35))
     ex = [(reachy, REACHY), (board + np.array([30.0, 0, 0]), BOARD), (P["tray-cradle"], DENIM),
-          (P["backstrap"] + np.array([-45.0, 0, 0]), DENIM), (P["bezel"] + np.array([60.0, 0, 0]), DENIM_DARK)]
-    draw(ex, "exploded", 22, 35, "exploded: backstrap slides on from behind, bezel snaps on the front")
+          (P["backstrap"] + np.array([-45.0, 0, 0]), DENIM), (P["bezel"] + np.array([60.0, 0, 0]), DENIM_DARK),
+          (P["pins"] + np.array([0, 0, 30.0]), PIN)]
+    draw(ex, "exploded", 22, 35, "exploded: backstrap slides on from behind along the rails, pins drop in; bezel snaps on the front")
     cut = [(T[(T[:, :, 1] < 0).all(axis=1)], c) for T, c in full]
     draw(cut, "section", 2, 90, "section at robot y = 0: tray back, ribs, collar, spring nub against the shell")
-    for n, c in (("bezel", DENIM_DARK), ("tray-cradle", DENIM), ("backstrap", DENIM)):
+    for n, c in (("bezel", DENIM_DARK), ("tray-cradle", DENIM), ("backstrap", DENIM), ("pins", PIN)):
         T = subdivide(load_stl(os.path.join(OUT, "print", "%s-%s-print.stl" % (PRE, n))))
         draw([(T, c)], "print-" + n, 35, -60, "%s - as printed (on the bed)" % n)
 

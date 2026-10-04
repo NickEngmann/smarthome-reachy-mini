@@ -14,12 +14,13 @@ Three prints, no screws:
                pegs, which go through the board's M3 holes. Face down.
   TRAY-CRADLE  the tray (USB-C openings, switch slot, BOOT/RESET pin holes, LED and mic holes,
                an overalls strap + buckle + button on each end) and, behind it, ribs contoured
-               to Reachy's belly and the front half of the waistband ending in a joint strip
-               on each side. Upright.
+               to Reachy's belly and the front half of the waistband ending, on each side, in a
+               plate with two rails, a stop and a pin cap. Upright.
   BACKSTRAP    the rest of the dungarees: waistband with belt loops, back pockets, crossed
                straps with buttons, a cable gutter that doubles as the rolled cuff, three spring
-               tabs that preload the collar, and at each side a tongue with two flex tabs that
-               hook into the strip. Upright.
+               tabs that preload the collar, and at each side a tongue whose grooves slide onto
+               the rails, with a boss the pin drops into. Upright.
+  PINS         two, one per side: dropped through the cap into the boss, they lock the joint.
 Frames, printer fits and every number: geom.py. Board facts come from Elecrow's STEP.
 """
 import os, sys, math

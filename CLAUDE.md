@@ -9,11 +9,6 @@ whether the change is good.
 runbook live in the sibling repo `../smarthome-reachy-mini-display`, which has its own CLAUDE.md.
 Read that one for the system, the robot and the panel; read this one for the plastic.
 
-**The robot's own software state is recorded there too** (2026-09-22): `robot/backup.py` snapshots
-what is installed on the Reachy Mini into `robot/snapshot/`, and `docs/robot-provisioning.md` is the
-order to rebuild it from a blank SD card. The tokens are gitignored on that side; keep a copy off
-disk. This repo stays hardware only - one place for the code, one for the plastic.
-
 ## 0. Hard rules
 
 1. **`python` is the CAD interpreter, and it is Python 3.11.** The scripts here need
@@ -119,6 +114,23 @@ only thing that says *where* a slicer warning is, because the Bambu CLI says nei
   reasoned or checked in CAD, never confirmed in plastic - say so in that order.
 - The printable outputs are now committed (`out/print/*.stl`, `out/bambu/*.3mf`, `out/render/*.png`);
   `out/step`, `out/stl` and the slicer diagnostics stay out of git.
+
+**2026-09-30: v0.6, the side joints rebuilt as a rail-and-pin slide lock.** v0.5 was printed and its
+joint hooks never clicked (owner glued it). Each side now has two trapezoid rails on the tray-cradle's
+side plate running in grooves in the backstrap's tongue, a stop, and a Ø4 pin dropped through a cap
+(tray-cradle) into a boss (tongue). All joint clearances are `FIT_JOINT` 0.50 (looser than
+`FIT_SLIDE` on purpose: tall warping walls, and the pin is the lock), pin hole Ø4.8. Checked: 0.000 mm3
+everywhere, backstrap path 0.5-100 mm along the rails, stop and pin positive controls, watertight,
+islands clean; tray-cradle 5 h 14 / 162.5 g, bezel+backstrap+pins 4 h 00 / 124.1 g, no warnings.
+Not yet printed. Two traps worth not rediscovering:
+
+- **Interlocks between two upright prints can't hook.** A dovetail rail-and-groove sliding along x
+  needs one undercut that starts in mid-air in one of the two parts (the groove's roof at the tongue's
+  face, or the rail's tip). The rails are trapezoids and only locate; the backstrap can't leave a
+  plate without its other tongue running into the other plate.
+- **Positive controls must follow the numbers.** The "pin passes through the part" check grew the
+  pin by 0.3; when the hole went 4.5 -> 4.8 that rod fit the hole and the check read 0 and failed.
+  Grow the hole, not the pin.
 
 **2026-09-21: the bib straps (`overalls.py`), an optional fourth and fifth print.** Two clip-on
 shoulder straps that hang over the robot's own front rim and drop into the gap behind the panel.

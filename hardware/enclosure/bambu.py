@@ -16,7 +16,8 @@ supports anywhere:
                                     (95 mm tall collar and ribs on a band-thin footprint)
   reachy-dungarees-bezel-backstrap  the bezel face down (textured PEI gives the bib a fabric-like
                                     finish; no brim, the engraving is at the plate), the backstrap
-                                    upright, turned 90 deg to fit beside it, with a 5 mm brim
+                                    upright, turned 90 deg to fit beside it, with a 5 mm brim, and
+                                    the two joint pins head-down beside it
 """
 import json, os, struct, subprocess, sys, math
 import numpy as np
@@ -43,7 +44,8 @@ PROJECTS = [
          rows=[[("tray-cradle", 0.0, dict(BRIM))]]),
     dict(name="reachy-dungarees-bezel-backstrap", preset="Bambu PETG Basic @BBL X1C", colours=[DENIM],
          process=dict(COMMON, brim_type="no_brim"),
-         rows=[[("bezel", 0.0, {})], [("backstrap", 90.0, dict(BRIM))]]),
+         # the two joint pins (v0.6) ride on this plate: head down, a 3 mm brim on an 8 mm head
+         rows=[[("bezel", 0.0, {})], [("backstrap", 90.0, dict(BRIM)), ("pins", 0.0, dict(BRIM, brim_width="3"))]]),
     # The two bib straps: a small, quick plate of their own, so they can be printed (or reprinted in
     # another colour) without touching the three parts that are already on the robot. They lie with
     # their profile on the plate and their 14 mm width as the print Z, which makes each one a
